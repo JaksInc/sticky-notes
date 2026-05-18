@@ -14,8 +14,9 @@
   <div class="content-area" id="content-area">
     <div class="view-render hint" id="view-render" tabindex="0"></div>
     <textarea class="edit-raw" id="edit-raw" placeholder="Type your note here…
-Use '- ' at the start of a line for bullets.
-Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to generate a barcode."></textarea>
+Use '- ' at the start of a line for bullet points.
+Type digits alone for a barcode, or 'Label: digits' to label it.
+Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   </div>
   <div class="status-bar" id="status-bar"></div>
 
@@ -35,6 +36,8 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
 
     let note = null;
     let saveTimer = null;
+    let autoViewTimer = null;
+    let isInEditMode = false;
 
     function getIdFromUrl() {
       return new URLSearchParams(location.search).get('id');
@@ -85,14 +88,24 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
         'Saved ' + d.toLocaleTimeString();
     }
 
+    function commitAndSave() {
+      note.content = document.getElementById('edit-raw').value;
+      saveNote(note);
+      updateTitle();
+      updateStatus();
+    }
+
     function switchToViewMode() {
+      if (!isInEditMode) return;
+      isInEditMode = false;
+      clearTimeout(autoViewTimer);
+
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
-
       textarea.classList.remove('visible');
       viewEl.classList.remove('hidden');
-
       viewEl.innerHTML = '';
+
       const frag = renderContent(note.content);
       if (!frag.childNodes.length) {
         viewEl.classList.add('hint');
@@ -103,9 +116,11 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
     }
 
     function switchToEditMode() {
+      if (isInEditMode) return;
+      isInEditMode = true;
+
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
-
       viewEl.classList.add('hidden');
       viewEl.classList.remove('hint');
       textarea.value = note.content;
@@ -123,6 +138,14 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
       }, 300);
     }
 
+    function scheduleAutoView() {
+      clearTimeout(autoViewTimer);
+      autoViewTimer = setTimeout(() => {
+        commitAndSave();
+        switchToViewMode();
+      }, 1500);
+    }
+
     function init() {
       const id = getIdFromUrl();
       if (!id) { document.title = 'Error'; document.body.textContent = 'No note ID.'; return; }
@@ -136,33 +159,32 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
       updateStatus();
       switchToViewMode();
 
-      // Click on rendered view → enter edit mode
       document.getElementById('view-render').addEventListener('click', switchToEditMode);
       document.getElementById('view-render').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') switchToEditMode();
       });
 
-      // Textarea events
       const textarea = document.getElementById('edit-raw');
-      textarea.addEventListener('input', scheduleSave);
+
+      textarea.addEventListener('input', () => {
+        scheduleSave();
+        scheduleAutoView();
+      });
+
       textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          note.content = textarea.value;
-          saveNote(note);
-          updateTitle();
-          updateStatus();
+          clearTimeout(autoViewTimer);
+          commitAndSave();
           switchToViewMode();
         }
       });
+
       textarea.addEventListener('blur', () => {
-        note.content = textarea.value;
-        saveNote(note);
-        updateTitle();
-        updateStatus();
+        clearTimeout(autoViewTimer);
+        commitAndSave();
         switchToViewMode();
       });
 
-      // Storage changes from other windows (e.g. main window delete)
       window.addEventListener('storage', (e) => {
         if (e.key !== 'sticky-notes') return;
         const updated = getNote(id);

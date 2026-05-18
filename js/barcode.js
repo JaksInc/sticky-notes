@@ -46,9 +46,16 @@ function detectBarcode(digits) {
   return null;
 }
 
-function buildBarcodeElement(barcode) {
+function buildBarcodeElement(barcode, label) {
   const wrapper = document.createElement('div');
   wrapper.className = 'barcode-block';
+
+  if (label) {
+    const labelEl = document.createElement('div');
+    labelEl.className = 'barcode-label';
+    labelEl.textContent = label;
+    wrapper.appendChild(labelEl);
+  }
 
   if (!barcode.valid) {
     const err = document.createElement('span');

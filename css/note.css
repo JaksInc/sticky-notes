@@ -116,6 +116,14 @@ textarea.edit-raw.visible {
   padding: 8px;
 }
 
+.barcode-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 5px;
+  align-self: flex-start;
+}
+
 .barcode-block svg {
   max-width: 100%;
   height: auto;

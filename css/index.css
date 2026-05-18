@@ -82,25 +82,55 @@ body {
 
 .card-body {
   flex: 1;
-  padding: 10px 10px 4px;
+  padding: 8px 10px 4px;
   overflow: hidden;
 }
 
 .card-preview {
-  font-size: 11.5px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.4;
   color: #333;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  white-space: pre-wrap;
-  word-break: break-word;
+  max-height: 105px;
 }
 
-.card-preview.empty {
+.card-preview .empty {
   color: #999;
   font-style: italic;
+}
+
+/* Preview rendered content */
+.card-preview .preview-line {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-preview .preview-list {
+  margin: 1px 0;
+  padding-left: 14px;
+}
+
+.card-preview .preview-list li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.card-preview .preview-barcode {
+  color: #555;
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 1px 0;
+}
+
+.card-preview .preview-barcode-num {
+  font-family: monospace;
+  font-weight: 600;
 }
 
 .card-actions {
