@@ -38,6 +38,20 @@ html, body {
 .swatch:hover { transform: scale(1.15); }
 .swatch.active { outline: 2px solid #333; outline-offset: 2px; }
 
+.save-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 5px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.save-btn:hover { opacity: .85; }
+
 .content-area {
   flex: 1;
   overflow-y: auto;

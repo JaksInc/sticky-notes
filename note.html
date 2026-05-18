@@ -10,6 +10,7 @@
 <body>
   <div class="color-bar" id="color-bar">
     <span class="color-bar-label">Color:</span>
+    <button class="save-btn" id="btn-save" style="display:none">Save</button>
   </div>
   <div class="content-area" id="content-area">
     <div class="view-render hint" id="view-render" tabindex="0"></div>
@@ -36,7 +37,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
     let note = null;
     let saveTimer = null;
-    let autoViewTimer = null;
     let isInEditMode = false;
 
     function getIdFromUrl() {
@@ -98,7 +98,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     function switchToViewMode() {
       if (!isInEditMode) return;
       isInEditMode = false;
-      clearTimeout(autoViewTimer);
+      document.getElementById('btn-save').style.display = 'none';
 
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
@@ -118,6 +118,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     function switchToEditMode() {
       if (isInEditMode) return;
       isInEditMode = true;
+      document.getElementById('btn-save').style.display = '';
 
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
@@ -136,14 +137,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         updateTitle();
         updateStatus();
       }, 300);
-    }
-
-    function scheduleAutoView() {
-      clearTimeout(autoViewTimer);
-      autoViewTimer = setTimeout(() => {
-        commitAndSave();
-        switchToViewMode();
-      }, 1500);
     }
 
     function init() {
@@ -166,9 +159,11 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
       const textarea = document.getElementById('edit-raw');
 
-      textarea.addEventListener('input', () => {
-        scheduleSave();
-        scheduleAutoView();
+      textarea.addEventListener('input', scheduleSave);
+
+      document.getElementById('btn-save').addEventListener('click', () => {
+        commitAndSave();
+        switchToViewMode();
       });
 
       textarea.addEventListener('keydown', (e) => {
