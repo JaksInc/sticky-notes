@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sticky Notes</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sticky Notes">
+  <meta name="theme-color" content="#4a90d9">
   <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
@@ -24,6 +30,10 @@
   <script src="js/render.js"></script>
   <script>
     const openWindows = new Map();
+
+    function isMobile() {
+      return window.innerWidth < 768 || 'ontouchstart' in window;
+    }
 
     function renderGrid() {
       const notes = getAllNotes();
@@ -79,6 +89,10 @@
     }
 
     function openNote(id) {
+      if (isMobile()) {
+        location.href = 'note.html?id=' + encodeURIComponent(id);
+        return;
+      }
       const existing = openWindows.get(id);
       if (existing && !existing.closed) {
         existing.focus();
@@ -108,14 +122,14 @@
     });
 
     document.getElementById('btn-popup').addEventListener('click', () => {
-      window.open(
-        'index.html',
-        'sticky-main',
-        'popup=1,width=820,height=600,resizable=yes'
-      );
+      window.open('index.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
     });
 
+    // Hide popup and pop-out controls when not applicable
     if (window.opener !== null) {
+      document.getElementById('btn-popup').style.display = 'none';
+    }
+    if (isMobile()) {
       document.getElementById('btn-popup').style.display = 'none';
     }
 
@@ -125,6 +139,10 @@
     });
 
     renderGrid();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
   </script>
 </body>
 </html>
