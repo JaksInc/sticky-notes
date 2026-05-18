@@ -115,6 +115,7 @@
       );
     });
 
+    // Hide the pop-out button when already running as a popup
     if (window.opener !== null) {
       document.getElementById('btn-popup').style.display = 'none';
     }

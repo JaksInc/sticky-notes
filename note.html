@@ -136,11 +136,13 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
       updateStatus();
       switchToViewMode();
 
+      // Click on rendered view → enter edit mode
       document.getElementById('view-render').addEventListener('click', switchToEditMode);
       document.getElementById('view-render').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') switchToEditMode();
       });
 
+      // Textarea events
       const textarea = document.getElementById('edit-raw');
       textarea.addEventListener('input', scheduleSave);
       textarea.addEventListener('keydown', (e) => {
@@ -160,6 +162,7 @@ Enter a 6 or 10-digit Home Depot SKU, or a 12/13-digit UPC/EAN barcode number to
         switchToViewMode();
       });
 
+      // Storage changes from other windows (e.g. main window delete)
       window.addEventListener('storage', (e) => {
         if (e.key !== 'sticky-notes') return;
         const updated = getNote(id);
