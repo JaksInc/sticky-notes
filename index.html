@@ -25,6 +25,10 @@
   <script>
     const openWindows = new Map();
 
+    function isMobile() {
+      return window.innerWidth < 768 || 'ontouchstart' in window;
+    }
+
     function renderGrid() {
       const notes = getAllNotes();
       const grid = document.getElementById('grid');
@@ -79,6 +83,10 @@
     }
 
     function openNote(id) {
+      if (isMobile()) {
+        location.href = 'note.html?id=' + encodeURIComponent(id);
+        return;
+      }
       const existing = openWindows.get(id);
       if (existing && !existing.closed) {
         existing.focus();
@@ -108,14 +116,14 @@
     });
 
     document.getElementById('btn-popup').addEventListener('click', () => {
-      window.open(
-        'index.html',
-        'sticky-main',
-        'popup=1,width=820,height=600,resizable=yes'
-      );
+      window.open('index.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
     });
 
+    // Hide popup and pop-out controls when not applicable
     if (window.opener !== null) {
+      document.getElementById('btn-popup').style.display = 'none';
+    }
+    if (isMobile()) {
       document.getElementById('btn-popup').style.display = 'none';
     }
 

@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Note</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/note.css">
 </head>
 <body>
   <div class="color-bar" id="color-bar">
+    <a class="back-btn" id="btn-back" href="index.html" style="display:none">← Notes</a>
     <span class="color-bar-label">Color:</span>
+    <button class="share-btn" id="btn-share" style="display:none">Share ↗</button>
     <button class="save-btn" id="btn-save" style="display:none">Save</button>
   </div>
+
   <div class="content-area" id="content-area">
     <div class="view-render hint" id="view-render" tabindex="0"></div>
     <textarea class="edit-raw" id="edit-raw" placeholder="Type your note here…
@@ -19,7 +23,21 @@ Use '- ' at the start of a line for bullet points.
 Type digits alone for a barcode, or 'Label: digits' to label it.
 Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   </div>
+
   <div class="status-bar" id="status-bar"></div>
+
+  <!-- Share modal -->
+  <div class="share-modal" id="share-modal" style="display:none">
+    <div class="share-modal-box">
+      <div class="share-modal-title">Share Note</div>
+      <div id="share-qr"></div>
+      <input class="share-url-input" id="share-url" readonly>
+      <div class="share-modal-actions">
+        <button id="btn-copy-link">Copy Link</button>
+        <button id="btn-close-share">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
@@ -39,8 +57,8 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     let saveTimer = null;
     let isInEditMode = false;
 
-    function getIdFromUrl() {
-      return new URLSearchParams(location.search).get('id');
+    function getParam(name) {
+      return new URLSearchParams(location.search).get(name);
     }
 
     function applyColor(color) {
@@ -60,6 +78,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
     function buildSwatches() {
       const bar = document.getElementById('color-bar');
+      const saveBtn = document.getElementById('btn-save');
       for (const sw of SWATCHES) {
         const btn = document.createElement('button');
         btn.className = 'swatch';
@@ -67,7 +86,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         btn.title = sw.name;
         btn.dataset.color = sw.color;
         btn.addEventListener('click', () => handleColorChange(sw.color));
-        bar.appendChild(btn);
+        bar.insertBefore(btn, saveBtn);
       }
     }
 
@@ -84,8 +103,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
     function updateStatus() {
       const d = new Date(note.modified);
-      document.getElementById('status-bar').textContent =
-        'Saved ' + d.toLocaleTimeString();
+      document.getElementById('status-bar').textContent = 'Saved ' + d.toLocaleTimeString();
     }
 
     function commitAndSave() {
@@ -99,6 +117,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       if (!isInEditMode) return;
       isInEditMode = false;
       document.getElementById('btn-save').style.display = 'none';
+      document.getElementById('btn-share').style.display = '';
 
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
@@ -119,6 +138,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       if (isInEditMode) return;
       isInEditMode = true;
       document.getElementById('btn-save').style.display = '';
+      document.getElementById('btn-share').style.display = 'none';
 
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
@@ -139,8 +159,98 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }, 300);
     }
 
+    // ── Share ──────────────────────────────────────────
+    function buildShareUrl() {
+      const payload = btoa(unescape(encodeURIComponent(
+        JSON.stringify({ content: note.content, color: note.color })
+      )));
+      return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
+    }
+
+    function decodeSharePayload(encoded) {
+      try {
+        return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(encoded)))));
+      } catch { return null; }
+    }
+
+    function initShareHandlers() {
+      document.getElementById('btn-share').addEventListener('click', () => {
+        const url = buildShareUrl();
+        document.getElementById('share-url').value = url;
+        document.getElementById('share-qr').innerHTML = '';
+        new QRCode(document.getElementById('share-qr'), {
+          text: url,
+          width: 180,
+          height: 180,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+        });
+        document.getElementById('share-modal').style.display = 'flex';
+      });
+
+      document.getElementById('btn-copy-link').addEventListener('click', () => {
+        const btn = document.getElementById('btn-copy-link');
+        navigator.clipboard.writeText(document.getElementById('share-url').value)
+          .then(() => { btn.textContent = 'Copied!'; })
+          .catch(() => { document.getElementById('share-url').select(); });
+      });
+
+      document.getElementById('btn-close-share').addEventListener('click', () => {
+        document.getElementById('share-modal').style.display = 'none';
+        document.getElementById('btn-copy-link').textContent = 'Copy Link';
+      });
+
+      // Close modal on backdrop click
+      document.getElementById('share-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('share-modal')) {
+          document.getElementById('share-modal').style.display = 'none';
+          document.getElementById('btn-copy-link').textContent = 'Copy Link';
+        }
+      });
+    }
+
+    // ── Import mode (opened via shared URL) ───────────
+    function initImportMode(payload) {
+      note = {
+        id: null,
+        content: payload.content || '',
+        color: payload.color || '#FFF9C4',
+        created: Date.now(),
+        modified: Date.now()
+      };
+      document.body.style.backgroundColor = note.color;
+
+      document.getElementById('color-bar').innerHTML =
+        '<span class="import-banner">Shared note — </span>' +
+        '<button id="btn-import-save">Save to My Notes</button>';
+
+      const viewEl = document.getElementById('view-render');
+      viewEl.classList.remove('hint');
+      const frag = renderContent(note.content);
+      if (frag.childNodes.length) viewEl.appendChild(frag);
+
+      document.title = note.content.split('\n')[0].trim().slice(0, 40) || 'Shared Note';
+      document.getElementById('status-bar').textContent = 'Shared note — read only';
+
+      document.getElementById('btn-import-save').addEventListener('click', () => {
+        const saved = createNote();
+        saved.content = note.content;
+        saved.color = note.color;
+        saveNote(saved);
+        location.href = 'note.html?id=' + encodeURIComponent(saved.id);
+      });
+    }
+
+    // ── Main init ─────────────────────────────────────
     function init() {
-      const id = getIdFromUrl();
+      // Import mode — shared URL
+      const importData = getParam('import');
+      if (importData) {
+        const payload = decodeSharePayload(importData);
+        if (payload) { initImportMode(payload); return; }
+      }
+
+      const id = getParam('id');
       if (!id) { document.title = 'Error'; document.body.textContent = 'No note ID.'; return; }
 
       note = getNote(id);
@@ -150,6 +260,14 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       applyColor(note.color || '#FFF9C4');
       updateTitle();
       updateStatus();
+
+      // Show back button when not in a popup
+      if (window.opener === null) {
+        document.getElementById('btn-back').style.display = '';
+      }
+
+      // Share button visible in view mode (set by switchToViewMode below)
+      initShareHandlers();
       switchToViewMode();
 
       document.getElementById('view-render').addEventListener('click', switchToEditMode);
@@ -158,7 +276,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       });
 
       const textarea = document.getElementById('edit-raw');
-
       textarea.addEventListener('input', scheduleSave);
 
       document.getElementById('btn-save').addEventListener('click', () => {
@@ -168,14 +285,12 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
       textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          clearTimeout(autoViewTimer);
           commitAndSave();
           switchToViewMode();
         }
       });
 
       textarea.addEventListener('blur', () => {
-        clearTimeout(autoViewTimer);
         commitAndSave();
         switchToViewMode();
       });

@@ -48,11 +48,11 @@ function detectBarcode(digits) {
 
 function buildBarcodeElement(barcode, label) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'barcode-block';
+  wrapper.className = 'barcode-inline';
 
   if (label) {
-    const labelEl = document.createElement('div');
-    labelEl.className = 'barcode-label';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'barcode-inline-label';
     labelEl.textContent = label;
     wrapper.appendChild(labelEl);
   }
@@ -65,37 +65,29 @@ function buildBarcodeElement(barcode, label) {
     return wrapper;
   }
 
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const numEl = document.createElement('span');
+  numEl.className = 'barcode-inline-num';
+  numEl.textContent = barcode.formatted;
+  wrapper.appendChild(numEl);
 
-  let format;
-  if (barcode.type === 'UPC') {
-    format = 'UPC';
-  } else if (barcode.type === 'EAN13') {
-    format = 'EAN13';
-  } else {
-    format = 'CODE128';
-  }
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const format = barcode.type === 'UPC' ? 'UPC' : barcode.type === 'EAN13' ? 'EAN13' : 'CODE128';
 
   try {
     JsBarcode(svg, barcode.value, {
-      format: format,
-      displayValue: true,
-      text: barcode.formatted,
-      width: 1.5,
-      height: 55,
-      margin: 6,
-      fontSize: 12,
-      fontOptions: '',
-      textMargin: 4
+      format,
+      displayValue: false,
+      width: 1.2,
+      height: 20,
+      margin: 1,
     });
+    wrapper.appendChild(svg);
   } catch (e) {
     const err = document.createElement('span');
     err.className = 'barcode-error';
-    err.textContent = '⚠ Could not render barcode: ' + barcode.formatted;
+    err.textContent = '⚠ Could not render: ' + barcode.formatted;
     wrapper.appendChild(err);
-    return wrapper;
   }
 
-  wrapper.appendChild(svg);
   return wrapper;
 }
