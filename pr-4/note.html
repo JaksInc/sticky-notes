@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Note</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sticky Notes">
+  <meta name="theme-color" content="#4a90d9">
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="css/note.css">
+</head>
+<body>
+  <div class="color-bar" id="color-bar">
+    <a class="back-btn" id="btn-back" href="index.html" style="display:none">← Notes</a>
+    <span class="color-bar-label">Color:</span>
+    <button class="share-btn" id="btn-share" style="display:none">Share ↗</button>
+    <button class="save-btn" id="btn-save" style="display:none">Save</button>
+  </div>
+
+  <div class="content-area" id="content-area">
+    <div class="view-render hint" id="view-render" tabindex="0"></div>
+    <textarea class="edit-raw" id="edit-raw" placeholder="Type your note here…
+Use '- ' at the start of a line for bullet points.
+Type digits alone for a barcode, or 'Label: digits' to label it.
+Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- Share modal -->
+  <div class="share-modal" id="share-modal" style="display:none">
+    <div class="share-modal-box">
+      <div class="share-modal-title">Share Note</div>
+      <div id="share-qr"></div>
+      <input class="share-url-input" id="share-url" readonly>
+      <div class="share-modal-actions">
+        <button id="btn-copy-link">Copy Link</button>
+        <button id="btn-close-share">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/barcode.js"></script>
+  <script src="js/render.js"></script>
+  <script>
+    const SWATCHES = [
+      { color: '#FFF9C4', name: 'Yellow' },
+      { color: '#F8BBD0', name: 'Pink' },
+      { color: '#BBDEFB', name: 'Blue' },
+      { color: '#C8E6C9', name: 'Green' },
+      { color: '#FFE0B2', name: 'Orange' },
+      { color: '#E1BEE7', name: 'Purple' },
+      { color: '#FFFFFF', name: 'White' }
+    ];
+
+    let note = null;
+    let saveTimer = null;
+    let isInEditMode = false;
+
+    function getParam(name) {
+      return new URLSearchParams(location.search).get(name);
+    }
+
+    function applyColor(color) {
+      document.body.style.backgroundColor = color;
+      document.getElementById('edit-raw').style.backgroundColor = hexToRgba(color, 0.3);
+      document.querySelectorAll('.swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.color === color);
+      });
+    }
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function buildSwatches() {
+      const bar = document.getElementById('color-bar');
+      const saveBtn = document.getElementById('btn-save');
+      for (const sw of SWATCHES) {
+        const btn = document.createElement('button');
+        btn.className = 'swatch';
+        btn.style.backgroundColor = sw.color;
+        btn.title = sw.name;
+        btn.dataset.color = sw.color;
+        btn.addEventListener('click', () => handleColorChange(sw.color));
+        bar.insertBefore(btn, saveBtn);
+      }
+    }
+
+    function handleColorChange(color) {
+      note.color = color;
+      saveNote(note);
+      applyColor(color);
+    }
+
+    function updateTitle() {
+      const firstLine = (note.content || '').split('\n')[0].trim();
+      document.title = firstLine.slice(0, 40) || 'New Note';
+    }
+
+    function updateStatus() {
+      const d = new Date(note.modified);
+      document.getElementById('status-bar').textContent = 'Saved ' + d.toLocaleTimeString();
+    }
+
+    function commitAndSave() {
+      note.content = document.getElementById('edit-raw').value;
+      saveNote(note);
+      updateTitle();
+      updateStatus();
+    }
+
+    function switchToViewMode() {
+      if (!isInEditMode) return;
+      isInEditMode = false;
+      document.getElementById('btn-save').style.display = 'none';
+      document.getElementById('btn-share').style.display = '';
+
+      const viewEl = document.getElementById('view-render');
+      const textarea = document.getElementById('edit-raw');
+      textarea.classList.remove('visible');
+      viewEl.classList.remove('hidden');
+      viewEl.innerHTML = '';
+
+      const frag = renderContent(note.content);
+      if (!frag.childNodes.length) {
+        viewEl.classList.add('hint');
+      } else {
+        viewEl.classList.remove('hint');
+        viewEl.appendChild(frag);
+      }
+    }
+
+    function switchToEditMode() {
+      if (isInEditMode) return;
+      isInEditMode = true;
+      document.getElementById('btn-save').style.display = '';
+      document.getElementById('btn-share').style.display = 'none';
+
+      const viewEl = document.getElementById('view-render');
+      const textarea = document.getElementById('edit-raw');
+      viewEl.classList.add('hidden');
+      viewEl.classList.remove('hint');
+      textarea.value = note.content;
+      textarea.classList.add('visible');
+      textarea.focus();
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        note.content = document.getElementById('edit-raw').value;
+        saveNote(note);
+        updateTitle();
+        updateStatus();
+      }, 300);
+    }
+
+    // ── Share ──────────────────────────────────────────
+    function buildShareUrl() {
+      const payload = btoa(unescape(encodeURIComponent(
+        JSON.stringify({ content: note.content, color: note.color })
+      )));
+      return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
+    }
+
+    function decodeSharePayload(encoded) {
+      try {
+        return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(encoded)))));
+      } catch { return null; }
+    }
+
+    function initShareHandlers() {
+      document.getElementById('btn-share').addEventListener('click', () => {
+        const url = buildShareUrl();
+        document.getElementById('share-url').value = url;
+        document.getElementById('share-qr').innerHTML = '';
+        new QRCode(document.getElementById('share-qr'), {
+          text: url,
+          width: 180,
+          height: 180,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+        });
+        document.getElementById('share-modal').style.display = 'flex';
+      });
+
+      document.getElementById('btn-copy-link').addEventListener('click', () => {
+        const btn = document.getElementById('btn-copy-link');
+        navigator.clipboard.writeText(document.getElementById('share-url').value)
+          .then(() => { btn.textContent = 'Copied!'; })
+          .catch(() => { document.getElementById('share-url').select(); });
+      });
+
+      document.getElementById('btn-close-share').addEventListener('click', () => {
+        document.getElementById('share-modal').style.display = 'none';
+        document.getElementById('btn-copy-link').textContent = 'Copy Link';
+      });
+
+      // Close modal on backdrop click
+      document.getElementById('share-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('share-modal')) {
+          document.getElementById('share-modal').style.display = 'none';
+          document.getElementById('btn-copy-link').textContent = 'Copy Link';
+        }
+      });
+    }
+
+    // ── Import mode (opened via shared URL) ───────────
+    function initImportMode(payload) {
+      note = {
+        id: null,
+        content: payload.content || '',
+        color: payload.color || '#FFF9C4',
+        created: Date.now(),
+        modified: Date.now()
+      };
+      document.body.style.backgroundColor = note.color;
+
+      document.getElementById('color-bar').innerHTML =
+        '<span class="import-banner">Shared note — </span>' +
+        '<button id="btn-import-save">Save to My Notes</button>';
+
+      const viewEl = document.getElementById('view-render');
+      viewEl.classList.remove('hint');
+      const frag = renderContent(note.content);
+      if (frag.childNodes.length) viewEl.appendChild(frag);
+
+      document.title = note.content.split('\n')[0].trim().slice(0, 40) || 'Shared Note';
+      document.getElementById('status-bar').textContent = 'Shared note — read only';
+
+      document.getElementById('btn-import-save').addEventListener('click', () => {
+        const saved = createNote();
+        saved.content = note.content;
+        saved.color = note.color;
+        saveNote(saved);
+        location.href = 'note.html?id=' + encodeURIComponent(saved.id);
+      });
+    }
+
+    // ── Main init ─────────────────────────────────────
+    function init() {
+      // Import mode — shared URL
+      const importData = getParam('import');
+      if (importData) {
+        const payload = decodeSharePayload(importData);
+        if (payload) { initImportMode(payload); return; }
+      }
+
+      const id = getParam('id');
+      if (!id) { document.title = 'Error'; document.body.textContent = 'No note ID.'; return; }
+
+      note = getNote(id);
+      if (!note) { document.title = 'Not Found'; document.body.textContent = 'Note not found.'; return; }
+
+      buildSwatches();
+      applyColor(note.color || '#FFF9C4');
+      updateTitle();
+      updateStatus();
+
+      // Show back button when not in a popup
+      if (window.opener === null) {
+        document.getElementById('btn-back').style.display = '';
+      }
+
+      // Share button visible in view mode (set by switchToViewMode below)
+      initShareHandlers();
+      switchToViewMode();
+
+      document.getElementById('view-render').addEventListener('click', switchToEditMode);
+      document.getElementById('view-render').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') switchToEditMode();
+      });
+
+      const textarea = document.getElementById('edit-raw');
+      textarea.addEventListener('input', scheduleSave);
+
+      document.getElementById('btn-save').addEventListener('click', () => {
+        commitAndSave();
+        switchToViewMode();
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          commitAndSave();
+          switchToViewMode();
+        }
+      });
+
+      textarea.addEventListener('blur', () => {
+        commitAndSave();
+        switchToViewMode();
+      });
+
+      window.addEventListener('storage', (e) => {
+        if (e.key !== 'sticky-notes') return;
+        const updated = getNote(id);
+        if (!updated) { window.close(); return; }
+        if (updated.color !== note.color) {
+          note = updated;
+          applyColor(note.color);
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
