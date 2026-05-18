@@ -17,8 +17,22 @@
   <div class="toolbar">
     <h1>📋 Sticky Notes</h1>
     <button class="btn btn-primary" id="btn-new">+ New Note</button>
+    <button class="btn btn-secondary" id="btn-import-code">Import by Code</button>
     <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
   </div>
+  <!-- Import by code modal -->
+  <div class="import-modal" id="import-modal" style="display:none">
+    <div class="import-modal-box">
+      <div class="import-modal-title">Import Note by Code</div>
+      <input class="import-code-input" id="import-code-input"
+        placeholder="Paste or type import code…" autocomplete="off" spellcheck="false">
+      <div class="import-modal-actions">
+        <button id="btn-import-go">Import</button>
+        <button id="btn-import-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="grid-container">
     <div class="grid" id="grid"></div>
     <div class="empty-state" id="empty-state" style="display:none">
@@ -120,6 +134,35 @@
       const note = createNote();
       openNote(note.id);
       renderGrid();
+    });
+
+    document.getElementById('btn-import-code').addEventListener('click', () => {
+      document.getElementById('import-code-input').value = '';
+      document.getElementById('import-modal').style.display = 'flex';
+      document.getElementById('import-code-input').focus();
+    });
+
+    document.getElementById('btn-import-go').addEventListener('click', () => {
+      const raw = document.getElementById('import-code-input').value.trim();
+      if (!raw) return;
+      // Accept a raw gist ID (with or without spaces) or a full gist/import URL
+      const match = raw.replace(/\s/g, '').match(/([0-9a-f]{32})/i);
+      const gistId = match ? match[1] : raw.replace(/\s/g, '');
+      location.href = 'note.html?gist=' + encodeURIComponent(gistId);
+    });
+
+    document.getElementById('btn-import-cancel').addEventListener('click', () => {
+      document.getElementById('import-modal').style.display = 'none';
+    });
+
+    document.getElementById('import-code-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-import-go').click();
+      if (e.key === 'Escape') document.getElementById('import-modal').style.display = 'none';
+    });
+
+    document.getElementById('import-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('import-modal'))
+        document.getElementById('import-modal').style.display = 'none';
     });
 
     document.getElementById('btn-popup').addEventListener('click', () => {
