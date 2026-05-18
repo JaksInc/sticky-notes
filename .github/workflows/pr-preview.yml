@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Stamp commit SHA into service worker cache name
+        run: sed -i "s/__COMMIT__/${{ github.sha }}/g" sw.js
+
       - name: Deploy preview to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
