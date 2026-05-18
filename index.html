@@ -20,6 +20,8 @@
   </div>
 
   <script src="js/storage.js"></script>
+  <script src="js/barcode.js"></script>
+  <script src="js/render.js"></script>
   <script>
     const openWindows = new Map();
 
@@ -40,13 +42,18 @@
         card.className = 'card';
         card.style.backgroundColor = note.color || '#FFF9C4';
 
-        const preview = note.content.trim() || '';
         const body = document.createElement('div');
         body.className = 'card-body';
-        body.innerHTML = `<div class="card-preview${preview ? '' : ' empty'}">${
-          preview ? escapeHtml(preview.slice(0, 300)) : 'Empty note'
-        }</div>`;
         body.addEventListener('click', () => openNote(note.id));
+
+        const previewEl = document.createElement('div');
+        previewEl.className = 'card-preview';
+        if (note.content.trim()) {
+          previewEl.innerHTML = renderPreview(note.content);
+        } else {
+          previewEl.innerHTML = '<span class="empty">Empty note</span>';
+        }
+        body.appendChild(previewEl);
 
         const actions = document.createElement('div');
         actions.className = 'card-actions';
@@ -94,13 +101,6 @@
       renderGrid();
     }
 
-    function escapeHtml(str) {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
-
     document.getElementById('btn-new').addEventListener('click', () => {
       const note = createNote();
       openNote(note.id);
@@ -115,7 +115,6 @@
       );
     });
 
-    // Hide the pop-out button when already running as a popup
     if (window.opener !== null) {
       document.getElementById('btn-popup').style.display = 'none';
     }
