@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Note</title>
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,6 +19,7 @@
   <div class="color-bar" id="color-bar">
     <a class="back-btn" id="btn-back" href="index.html" style="display:none">← Notes</a>
     <span class="color-bar-label">Color:</span>
+    <button class="pin-btn" id="btn-pin" style="display:none">📌 Pin</button>
     <button class="share-btn" id="btn-share" style="display:none">Share ↗</button>
     <button class="save-btn" id="btn-save" style="display:none">Save</button>
   </div>
@@ -124,6 +126,9 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       isInEditMode = false;
       document.getElementById('btn-save').style.display = 'none';
       document.getElementById('btn-share').style.display = '';
+      if ('documentPictureInPicture' in window) {
+        document.getElementById('btn-pin').style.display = '';
+      }
 
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
@@ -138,6 +143,8 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         viewEl.classList.remove('hint');
         viewEl.appendChild(frag);
       }
+
+      refreshPiP();
     }
 
     function switchToEditMode() {
@@ -145,6 +152,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       isInEditMode = true;
       document.getElementById('btn-save').style.display = '';
       document.getElementById('btn-share').style.display = 'none';
+      document.getElementById('btn-pin').style.display = 'none';
 
       const viewEl = document.getElementById('view-render');
       const textarea = document.getElementById('edit-raw');
@@ -215,6 +223,72 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       });
     }
 
+    // ── Picture-in-Picture (always-on-top) ────────────
+    let pipWindow = null;
+
+    function refreshPiP() {
+      if (!pipWindow || pipWindow.closed) return;
+
+      // Render note content to HTML string via a temp element
+      const temp = document.createElement('div');
+      temp.appendChild(renderContent(note.content));
+
+      pipWindow.document.body.innerHTML = temp.innerHTML ||
+        '<p style="color:rgba(0,0,0,.3);font-style:italic;padding:10px">Empty note</p>';
+
+      pipWindow.document.body.style.backgroundColor = note.color;
+    }
+
+    async function pinNote() {
+      if (!('documentPictureInPicture' in window)) return;
+
+      // Toggle: close if already open
+      if (pipWindow && !pipWindow.closed) {
+        pipWindow.close();
+        return;
+      }
+
+      try {
+        pipWindow = await window.documentPictureInPicture.requestWindow({
+          width: 360,
+          height: 260,
+        });
+
+        // Copy all stylesheets into the PiP document
+        for (const sheet of document.styleSheets) {
+          try {
+            const style = pipWindow.document.createElement('style');
+            style.textContent = Array.from(sheet.cssRules).map(r => r.cssText).join('\n');
+            pipWindow.document.head.appendChild(style);
+          } catch {
+            if (sheet.href) {
+              const link = pipWindow.document.createElement('link');
+              link.rel = 'stylesheet';
+              link.href = sheet.href;
+              pipWindow.document.head.appendChild(link);
+            }
+          }
+        }
+
+        pipWindow.document.body.style.cssText =
+          'margin:0;padding:10px 12px;box-sizing:border-box;overflow-y:auto;' +
+          'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+
+        refreshPiP();
+
+        document.getElementById('btn-pin').textContent = '📌 Pinned';
+
+        pipWindow.addEventListener('pagehide', () => {
+          pipWindow = null;
+          const btn = document.getElementById('btn-pin');
+          if (btn) btn.textContent = '📌 Pin';
+        });
+
+      } catch (e) {
+        console.error('Picture-in-Picture failed:', e);
+      }
+    }
+
     // ── Import mode (opened via shared URL) ───────────
     function initImportMode(payload) {
       note = {
@@ -272,8 +346,12 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         document.getElementById('btn-back').style.display = '';
       }
 
-      // Share button visible in view mode (set by switchToViewMode below)
       initShareHandlers();
+
+      if ('documentPictureInPicture' in window) {
+        document.getElementById('btn-pin').addEventListener('click', pinNote);
+      }
+
       switchToViewMode();
 
       document.getElementById('view-render').addEventListener('click', switchToEditMode);
