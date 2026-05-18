@@ -1,4 +1,4 @@
-const CACHE = 'sticky-notes-2568b7fa53b92e9014e1103202629578132c96b5';
+const CACHE = 'sticky-notes-7b9b4a32831a5e2b0262c3f37ee06e1be800dc85';
 
 const ASSETS = [
   './',

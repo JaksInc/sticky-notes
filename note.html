@@ -352,6 +352,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         document.getElementById('btn-pin').addEventListener('click', pinNote);
       }
 
+      isInEditMode = true; // allow switchToViewMode to render on first load
       switchToViewMode();
 
       document.getElementById('view-render').addEventListener('click', switchToEditMode);
