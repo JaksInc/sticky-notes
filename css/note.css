@@ -64,7 +64,7 @@ html, body {
 }
 .save-btn:hover { opacity: .85; }
 
-.share-btn {
+.pin-btn, .share-btn {
   padding: 4px 10px;
   border: none;
   border-radius: 5px;
@@ -75,7 +75,7 @@ html, body {
   cursor: pointer;
   flex-shrink: 0;
 }
-.share-btn:hover { background: rgba(0,0,0,.18); }
+.pin-btn:hover, .share-btn:hover { background: rgba(0,0,0,.18); }
 
 /* ── Content area ── */
 .content-area {
