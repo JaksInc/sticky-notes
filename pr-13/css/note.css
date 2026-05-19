@@ -1,0 +1,306 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  transition: background-color .2s;
+}
+
+/* ── Top bar ── */
+.color-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,.08);
+  border-bottom: 1px solid rgba(0,0,0,.1);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.color-bar-label {
+  font-size: 11px;
+  color: rgba(0,0,0,.5);
+  margin-right: 2px;
+}
+
+.back-btn {
+  font-size: 13px;
+  color: #444;
+  text-decoration: none;
+  padding: 3px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+.back-btn:hover { background: rgba(0,0,0,.08); }
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,.15);
+  cursor: pointer;
+  transition: transform .1s;
+  outline: none;
+  flex-shrink: 0;
+}
+.swatch:hover { transform: scale(1.15); }
+.swatch.active { outline: 2px solid #333; outline-offset: 2px; }
+
+.save-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 5px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.save-btn:hover { opacity: .85; }
+
+.pin-btn, .share-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 5px;
+  background: rgba(0,0,0,.1);
+  color: #333;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pin-btn:hover, .share-btn:hover { background: rgba(0,0,0,.18); }
+
+/* ── Content area ── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.view-render {
+  flex: 1;
+  padding: 14px 16px;
+  cursor: text;
+  min-height: 100%;
+  outline: none;
+}
+
+.view-render.hint::after {
+  content: 'Click to edit…';
+  display: block;
+  color: rgba(0,0,0,.3);
+  font-style: italic;
+  font-size: 15px;
+}
+
+.view-render.hidden { display: none; }
+
+textarea.edit-raw {
+  display: none;
+  flex: 1;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,.3);
+  font-family: inherit;
+  font-size: 16px;
+  resize: none;
+  line-height: 1.5;
+  color: #222;
+}
+textarea.edit-raw.visible { display: block; }
+
+/* ── Text content ── */
+.text-line {
+  margin: 2px 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #222;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bullet-list {
+  margin: 4px 0;
+  padding-left: 22px;
+}
+.bullet-list li {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #222;
+  margin: 1px 0;
+}
+
+/* ── Inline barcode row: Label  Number  ▌▌▌▌▌ ── */
+.barcode-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+  line-height: 1.5;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.barcode-inline-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.barcode-inline-num {
+  font-family: monospace;
+  font-size: 14px;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.barcode-inline svg {
+  height: 1.5em;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+.barcode-error {
+  color: #c00;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* ── Status bar ── */
+.status-bar {
+  font-size: 12px;
+  color: rgba(0,0,0,.35);
+  padding: 2px 12px 5px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Share modal ── */
+.share-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.share-modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 300px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+
+.share-code-block {
+  width: 100%;
+  text-align: center;
+}
+
+.share-code-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.share-code {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  letter-spacing: 1px;
+  word-break: break-all;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+.share-modal-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #222;
+}
+
+.share-url-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #555;
+  font-family: monospace;
+}
+
+.share-modal-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.share-modal-actions button {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#btn-copy-link {
+  background: #4a90d9;
+  color: #fff;
+}
+#btn-close-share {
+  background: #eee;
+  color: #333;
+}
+
+/* ── Import banner ── */
+.import-banner {
+  font-size: 13px;
+  color: #555;
+  font-style: italic;
+}
+
+#btn-import-save {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+#btn-import-save:hover { opacity: .85; }
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .swatch { width: 28px; height: 28px; }
+  .save-btn { padding: 6px 16px; font-size: 14px; }
+  .share-btn { padding: 6px 12px; font-size: 14px; }
+  .back-btn { font-size: 15px; }
+}

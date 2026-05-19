@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sticky Notes</title>
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sticky Notes">
+  <meta name="theme-color" content="#4a90d9">
+  <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+  <div class="toolbar">
+    <h1>📋 Sticky Notes</h1>
+    <button class="btn btn-primary" id="btn-new">+ New Note</button>
+    <button class="btn btn-secondary" id="btn-import-code">Import by Code</button>
+    <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
+  </div>
+  <!-- Import by code modal -->
+  <div class="import-modal" id="import-modal" style="display:none">
+    <div class="import-modal-box">
+      <div class="import-modal-title">Import Note by Code</div>
+      <input class="import-code-input" id="import-code-input"
+        placeholder="Paste or type import code…" autocomplete="off" spellcheck="false">
+      <div class="import-modal-actions">
+        <button id="btn-import-go">Import</button>
+        <button id="btn-import-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-container">
+    <div class="grid" id="grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none">
+      No notes yet — click <strong>+ New Note</strong> to get started.
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/barcode.js"></script>
+  <script src="js/render.js"></script>
+  <script>
+    const openWindows = new Map();
+
+    function isMobile() {
+      return window.innerWidth < 768 || 'ontouchstart' in window;
+    }
+
+    function renderGrid() {
+      const notes = getAllNotes();
+      const grid = document.getElementById('grid');
+      const emptyState = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      if (notes.length === 0) {
+        emptyState.style.display = '';
+        return;
+      }
+      emptyState.style.display = 'none';
+
+      for (const note of notes) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.backgroundColor = note.color || '#FFF9C4';
+
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        body.addEventListener('click', () => openNote(note.id));
+
+        const previewEl = document.createElement('div');
+        previewEl.className = 'card-preview';
+        if (note.content.trim()) {
+          previewEl.innerHTML = renderPreview(note.content);
+        } else {
+          previewEl.innerHTML = '<span class="empty">Empty note</span>';
+        }
+        body.appendChild(previewEl);
+
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+
+        const openBtn = document.createElement('button');
+        openBtn.className = 'card-btn';
+        openBtn.title = 'Open note';
+        openBtn.textContent = '✎';
+        openBtn.addEventListener('click', (e) => { e.stopPropagation(); openNote(note.id); });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'card-btn delete';
+        delBtn.title = 'Delete note';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteNoteUI(note.id); });
+
+        actions.appendChild(openBtn);
+        actions.appendChild(delBtn);
+        card.appendChild(body);
+        card.appendChild(actions);
+        grid.appendChild(card);
+      }
+    }
+
+    function openNote(id) {
+      if (isMobile()) {
+        location.href = 'note.html?id=' + encodeURIComponent(id);
+        return;
+      }
+      const existing = openWindows.get(id);
+      if (existing && !existing.closed) {
+        existing.focus();
+        return;
+      }
+      const w = window.open(
+        'note.html?id=' + encodeURIComponent(id),
+        'note-' + id,
+        'popup=1,width=380,height=520,resizable=yes,scrollbars=yes'
+      );
+      if (w) openWindows.set(id, w);
+    }
+
+    function deleteNoteUI(id) {
+      if (!confirm('Delete this note?')) return;
+      const existing = openWindows.get(id);
+      if (existing && !existing.closed) existing.close();
+      openWindows.delete(id);
+      deleteNote(id);
+      renderGrid();
+    }
+
+    document.getElementById('btn-new').addEventListener('click', () => {
+      const note = createNote();
+      openNote(note.id);
+      renderGrid();
+    });
+
+    document.getElementById('btn-import-code').addEventListener('click', () => {
+      document.getElementById('import-code-input').value = '';
+      document.getElementById('import-modal').style.display = 'flex';
+      document.getElementById('import-code-input').focus();
+    });
+
+    document.getElementById('btn-import-go').addEventListener('click', () => {
+      const raw = document.getElementById('import-code-input').value.trim();
+      if (!raw) return;
+      // Accept a raw gist ID (with or without spaces) or a full gist/import URL
+      const match = raw.replace(/\s/g, '').match(/([0-9a-f]{32})/i);
+      const gistId = match ? match[1] : raw.replace(/\s/g, '');
+      location.href = 'note.html?gist=' + encodeURIComponent(gistId);
+    });
+
+    document.getElementById('btn-import-cancel').addEventListener('click', () => {
+      document.getElementById('import-modal').style.display = 'none';
+    });
+
+    document.getElementById('import-code-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-import-go').click();
+      if (e.key === 'Escape') document.getElementById('import-modal').style.display = 'none';
+    });
+
+    document.getElementById('import-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('import-modal'))
+        document.getElementById('import-modal').style.display = 'none';
+    });
+
+    document.getElementById('btn-popup').addEventListener('click', () => {
+      window.open('index.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
+    });
+
+    // Hide popup and pop-out controls when not applicable
+    if (window.opener !== null) {
+      document.getElementById('btn-popup').style.display = 'none';
+    }
+    if (isMobile()) {
+      document.getElementById('btn-popup').style.display = 'none';
+    }
+
+    window.addEventListener('focus', renderGrid);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sticky-notes') renderGrid();
+    });
+
+    renderGrid();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+    }
+  </script>
+</body>
+</html>
