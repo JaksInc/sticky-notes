@@ -178,19 +178,19 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }, 300);
     }
 
-    // ── Share via GitHub Gist ─────────────────────────
-    async function createGist() {
-      const resp = await fetch('https://api.github.com/gists', {
+    // ── Share via JSONBlob (anonymous, CORS-friendly) ─
+    async function createShareBlob() {
+      const resp = await fetch('https://jsonblob.com/api/jsonBlob', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
-        body: JSON.stringify({
-          public: true,
-          description: 'Sticky Note',
-          files: { 'note.json': { content: JSON.stringify({ content: note.content, color: note.color }) } }
-        })
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ content: note.content, color: note.color })
       });
       if (!resp.ok) throw new Error(resp.status);
-      return (await resp.json()).id;
+      // ID is the last segment of the Location header URL
+      const loc = resp.headers.get('Location') || '';
+      const id = loc.split('/').pop();
+      if (!id) throw new Error('no id');
+      return id;
     }
 
     function closeShareModal() {
@@ -211,7 +211,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         document.getElementById('share-modal').style.display = 'flex';
 
         try {
-          const gistId = await createGist();
+          const gistId = await createShareBlob();
           const importUrl = location.origin + location.pathname + '?gist=' + gistId;
           document.getElementById('share-code').textContent = gistId.match(/.{1,8}/g).join(' ');
           document.getElementById('share-url').value = importUrl;
@@ -312,18 +312,15 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }
     }
 
-    // ── Import mode (opened via shared URL or gist) ───
-    async function initGistImportMode(gistId) {
+    // ── Import mode (opened via shared URL or blob) ───
+    async function initGistImportMode(blobId) {
       document.getElementById('color-bar').innerHTML =
         '<span class="import-banner">Loading shared note…</span>';
       try {
-        const resp = await fetch('https://api.github.com/gists/' + gistId,
-          { headers: { 'Accept': 'application/vnd.github+json' } });
+        const resp = await fetch('https://jsonblob.com/api/jsonBlob/' + blobId,
+          { headers: { 'Accept': 'application/json' } });
         if (!resp.ok) throw new Error();
-        const data = await resp.json();
-        const raw = data.files['note.json']?.content;
-        if (!raw) throw new Error();
-        initImportMode(JSON.parse(raw));
+        initImportMode(await resp.json());
       } catch {
         document.getElementById('color-bar').innerHTML =
           '<span class="import-banner">Could not load note.</span>';
