@@ -26,13 +26,16 @@
       <div class="import-modal-title">Import Note by Code</div>
       <p class="import-modal-hint">Paste or type the 4-part code from the Share screen</p>
       <div class="code-inputs">
-        <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-        <span class="code-sep">·</span>
-        <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-        <span class="code-sep">·</span>
-        <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-        <span class="code-sep">·</span>
-        <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+        <div class="code-row">
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <span class="code-sep">·</span>
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+        </div>
+        <div class="code-row">
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <span class="code-sep">·</span>
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+        </div>
       </div>
       <div class="import-modal-actions">
         <button id="btn-import-go">Import</button>
