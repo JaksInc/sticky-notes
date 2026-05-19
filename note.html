@@ -178,6 +178,13 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }, 300);
     }
 
+    function buildBase64Url() {
+      const payload = btoa(unescape(encodeURIComponent(
+        JSON.stringify({ content: note.content, color: note.color })
+      )));
+      return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
+    }
+
     // ── Share via JSONBlob (anonymous, CORS-friendly) ─
     async function createShareBlob() {
       const resp = await fetch('https://jsonblob.com/api/jsonBlob', {
@@ -197,33 +204,44 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       document.getElementById('share-modal').style.display = 'none';
       document.getElementById('btn-copy-code').textContent = 'Copy Code';
       document.getElementById('btn-copy-link').textContent = 'Copy Link';
+      document.getElementById('btn-copy-code').disabled = true;
+      document.getElementById('btn-copy-link').disabled = true;
       document.getElementById('share-code').style.color = '';
     }
 
     function initShareHandlers() {
       document.getElementById('btn-share').addEventListener('click', async () => {
+        // Show modal immediately with QR + URL from local base64 — no network needed
+        const baseUrl = buildBase64Url();
+        document.getElementById('share-url').value = baseUrl;
         document.getElementById('share-qr').innerHTML = '';
-        document.getElementById('share-code').textContent = 'Creating…';
-        document.getElementById('share-code').style.color = '';
-        document.getElementById('share-url').value = '';
+        new QRCode(document.getElementById('share-qr'), {
+          text: baseUrl, width: 180, height: 180,
+          colorDark: '#000000', colorLight: '#ffffff',
+        });
+        document.getElementById('btn-copy-link').disabled = false;
         document.getElementById('btn-copy-code').disabled = true;
-        document.getElementById('btn-copy-link').disabled = true;
+        document.getElementById('share-code').textContent = 'Generating…';
+        document.getElementById('share-code').style.color = '';
         document.getElementById('share-modal').style.display = 'flex';
 
+        // Try to get a short typeable code in the background
         try {
-          const gistId = await createShareBlob();
-          const importUrl = location.origin + location.pathname + '?gist=' + gistId;
-          document.getElementById('share-code').textContent = gistId.match(/.{1,8}/g).join(' ');
-          document.getElementById('share-url').value = importUrl;
+          const blobId = await createShareBlob();
+          const blobUrl = location.origin + location.pathname + '?gist=' + blobId;
+          document.getElementById('share-code').textContent = blobId.match(/.{1,8}/g).join(' ');
+          document.getElementById('share-code').style.color = '';
+          document.getElementById('share-url').value = blobUrl;
           document.getElementById('btn-copy-code').disabled = false;
-          document.getElementById('btn-copy-link').disabled = false;
+          // Regenerate QR with the shorter blob URL
+          document.getElementById('share-qr').innerHTML = '';
           new QRCode(document.getElementById('share-qr'), {
-            text: importUrl, width: 180, height: 180,
+            text: blobUrl, width: 180, height: 180,
             colorDark: '#000000', colorLight: '#ffffff',
           });
         } catch {
-          document.getElementById('share-code').textContent = 'Error — check connection';
-          document.getElementById('share-code').style.color = '#c00';
+          document.getElementById('share-code').textContent = 'Code unavailable';
+          document.getElementById('share-code').style.color = '#999';
         }
       });
 
