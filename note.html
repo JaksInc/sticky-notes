@@ -185,18 +185,15 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
     }
 
-    // ── Share via JSONBlob (anonymous, CORS-friendly) ─
+    // ── Share via MantleDB (anonymous key-value, ID generated client-side) ─
     async function createShareBlob() {
-      const resp = await fetch('https://jsonblob.com/api/jsonBlob', {
+      const id = crypto.randomUUID().replace(/-/g, '');
+      const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: note.content, color: note.color })
       });
       if (!resp.ok) throw new Error(resp.status);
-      // ID is the last segment of the Location header URL
-      const loc = resp.headers.get('Location') || '';
-      const id = loc.split('/').pop();
-      if (!id) throw new Error('no id');
       return id;
     }
 
@@ -335,7 +332,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       document.getElementById('color-bar').innerHTML =
         '<span class="import-banner">Loading shared note…</span>';
       try {
-        const resp = await fetch('https://jsonblob.com/api/jsonBlob/' + blobId,
+        const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + blobId,
           { headers: { 'Accept': 'application/json' } });
         if (!resp.ok) throw new Error();
         initImportMode(await resp.json());
