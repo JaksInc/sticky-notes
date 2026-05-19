@@ -154,7 +154,7 @@ body {
 .import-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(0,0,0,.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -162,49 +162,90 @@ body {
 }
 
 .import-modal-box {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
+  background: #FFFDF0;
+  border-radius: 16px;
+  padding: 28px 28px 22px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 320px;
-  width: 90%;
-  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  align-items: center;
+  gap: 16px;
+  max-width: 460px;
+  width: 94%;
+  box-shadow: 0 12px 48px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.1);
+  border: 1px solid rgba(0,0,0,.07);
 }
 
 .import-modal-title {
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: 700;
+  font-size: 17px;
   color: #222;
+  align-self: flex-start;
 }
 
-.import-code-input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-family: monospace;
-  font-size: 14px;
-  color: #222;
-  outline: none;
+.import-modal-hint {
+  font-size: 13px;
+  color: #888;
+  margin: -8px 0 0;
+  align-self: flex-start;
 }
-.import-code-input:focus { border-color: #4a90d9; }
+
+.code-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.code-chunk {
+  width: 82px;
+  padding: 10px 4px;
+  border: 1.5px solid #d0ccc0;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-align: center;
+  color: #222;
+  background: #fff;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.code-chunk:focus {
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74,144,217,.18);
+}
+
+.code-sep {
+  color: #bbb;
+  font-size: 20px;
+  user-select: none;
+  flex-shrink: 0;
+}
 
 .import-modal-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  width: 100%;
 }
 
 .import-modal-actions button {
-  padding: 7px 16px;
+  padding: 8px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 #btn-import-go { background: #4a90d9; color: #fff; }
-#btn-import-cancel { background: #eee; color: #333; }
+#btn-import-go:hover { opacity: .88; }
+#btn-import-cancel { background: rgba(0,0,0,.08); color: #444; }
+#btn-import-cancel:hover { background: rgba(0,0,0,.14); }
+
+@media (max-width: 480px) {
+  .code-chunk { width: 62px; font-size: 12px; letter-spacing: 0; padding: 9px 2px; }
+  .code-sep { font-size: 16px; }
+  .import-modal-box { padding: 22px 16px 18px; gap: 14px; }
+}
