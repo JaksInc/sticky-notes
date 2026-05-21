@@ -150,6 +150,70 @@ body {
   .btn { padding: 9px 16px; font-size: 14px; }
 }
 
+/* ── List view ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.list-row {
+  display: flex;
+  align-items: stretch;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.14);
+  overflow: hidden;
+  cursor: default;
+  background: #fff;
+  transition: box-shadow .15s;
+}
+.list-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+
+.list-swatch {
+  width: 8px;
+  flex-shrink: 0;
+}
+
+.list-main {
+  flex: 1;
+  padding: 10px 14px;
+  cursor: pointer;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.list-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-preview {
+  font-size: 13px;
+  color: #666;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-meta {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.list-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
 /* ── Import by code modal ── */
 .import-modal {
   position: fixed;
