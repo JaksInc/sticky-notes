@@ -22,6 +22,7 @@
     <button class="btn btn-secondary" id="btn-export">↓ Export</button>
     <button class="btn btn-secondary" id="btn-import-file">↑ Import</button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
+    <button class="btn btn-secondary" id="btn-view-toggle" title="Switch view">⊞ Grid</button>
     <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
   </div>
   <!-- Import by code modal -->
@@ -60,6 +61,22 @@
   <script src="js/render.js"></script>
   <script>
     const openWindows = new Map();
+    let currentView = localStorage.getItem('sticky-notes-view') || 'grid';
+
+    function setView(view) {
+      currentView = view;
+      localStorage.setItem('sticky-notes-view', view);
+      const btn = document.getElementById('btn-view-toggle');
+      const gridEl = document.getElementById('grid');
+      if (view === 'list') {
+        gridEl.className = 'list';
+        btn.textContent = '≡ List';
+      } else {
+        gridEl.className = 'grid';
+        btn.textContent = '⊞ Grid';
+      }
+      renderGrid();
+    }
 
     function isMobile() {
       return window.innerWidth < 768 || 'ontouchstart' in window;
@@ -86,26 +103,6 @@
       emptyState.style.display = 'none';
 
       for (const note of notes) {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.style.backgroundColor = note.color || '#FFF9C4';
-
-        const body = document.createElement('div');
-        body.className = 'card-body';
-        body.addEventListener('click', () => openNote(note.id));
-
-        const previewEl = document.createElement('div');
-        previewEl.className = 'card-preview';
-        if (note.content.trim()) {
-          previewEl.innerHTML = renderPreview(note.content);
-        } else {
-          previewEl.innerHTML = '<span class="empty">Empty note</span>';
-        }
-        body.appendChild(previewEl);
-
-        const actions = document.createElement('div');
-        actions.className = 'card-actions';
-
         const openBtn = document.createElement('button');
         openBtn.className = 'card-btn';
         openBtn.title = 'Open note';
@@ -118,11 +115,74 @@
         delBtn.textContent = '✕';
         delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteNoteUI(note.id); });
 
-        actions.appendChild(openBtn);
-        actions.appendChild(delBtn);
-        card.appendChild(body);
-        card.appendChild(actions);
-        grid.appendChild(card);
+        if (currentView === 'list') {
+          const row = document.createElement('div');
+          row.className = 'list-row';
+
+          const swatch = document.createElement('div');
+          swatch.className = 'list-swatch';
+          swatch.style.backgroundColor = note.color || '#FFF9C4';
+
+          const main = document.createElement('div');
+          main.className = 'list-main';
+          main.addEventListener('click', () => openNote(note.id));
+
+          const titleEl = document.createElement('div');
+          titleEl.className = 'list-title';
+          titleEl.textContent = note.content.split('\n')[0].trim() || 'Empty note';
+
+          const previewLines = note.content.split('\n').slice(1).filter(l => l.trim()).slice(0, 3);
+          if (previewLines.length) {
+            const preview = document.createElement('div');
+            preview.className = 'list-preview';
+            preview.textContent = previewLines.join(' · ');
+            main.appendChild(titleEl);
+            main.appendChild(preview);
+          } else {
+            main.appendChild(titleEl);
+          }
+
+          const meta = document.createElement('div');
+          meta.className = 'list-meta';
+          meta.textContent = new Date(note.modified).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          main.appendChild(meta);
+
+          const actions = document.createElement('div');
+          actions.className = 'list-actions';
+          actions.appendChild(openBtn);
+          actions.appendChild(delBtn);
+
+          row.appendChild(swatch);
+          row.appendChild(main);
+          row.appendChild(actions);
+          grid.appendChild(row);
+        } else {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.style.backgroundColor = note.color || '#FFF9C4';
+
+          const body = document.createElement('div');
+          body.className = 'card-body';
+          body.addEventListener('click', () => openNote(note.id));
+
+          const previewEl = document.createElement('div');
+          previewEl.className = 'card-preview';
+          if (note.content.trim()) {
+            previewEl.innerHTML = renderPreview(note.content);
+          } else {
+            previewEl.innerHTML = '<span class="empty">Empty note</span>';
+          }
+          body.appendChild(previewEl);
+
+          const actions = document.createElement('div');
+          actions.className = 'card-actions';
+          actions.appendChild(openBtn);
+          actions.appendChild(delBtn);
+
+          card.appendChild(body);
+          card.appendChild(actions);
+          grid.appendChild(card);
+        }
       }
     }
 
@@ -243,7 +303,11 @@
       }
     });
 
-    renderGrid();
+    document.getElementById('btn-view-toggle').addEventListener('click', () => {
+      setView(currentView === 'grid' ? 'list' : 'grid');
+    });
+
+    setView(currentView);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
