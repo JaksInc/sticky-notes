@@ -28,6 +28,7 @@
     <div class="view-render hint" id="view-render" tabindex="0"></div>
     <textarea class="edit-raw" id="edit-raw" placeholder="Type your note here…
 Use '- ' at the start of a line for bullet points.
+Use '[ ]' or '[x]' at the start of a line for checkboxes.
 Type digits alone for a barcode, or 'Label: digits' to label it.
 Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   </div>
@@ -126,6 +127,38 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       updateStatus();
     }
 
+    function attachCheckHandlers(viewEl) {
+      viewEl.querySelectorAll('.check-item input').forEach(cb => {
+        cb.addEventListener('click', (e) => {
+          e.stopPropagation(); // prevent triggering switchToEditMode
+          const lineIdx = parseInt(cb.closest('.check-item').dataset.line);
+          const lines = note.content.split('\n');
+          if (/^\[ \]/i.test(lines[lineIdx])) {
+            lines[lineIdx] = lines[lineIdx].replace(/^\[ \]/i, '[x]');
+          } else {
+            lines[lineIdx] = lines[lineIdx].replace(/^\[x\]/i, '[ ]');
+          }
+          note.content = lines.join('\n');
+          saveNote(note);
+          updateStatus();
+          renderView(viewEl);
+        });
+      });
+    }
+
+    function renderView(viewEl) {
+      viewEl.innerHTML = '';
+      const frag = renderContent(note.content);
+      if (!frag.childNodes.length) {
+        viewEl.classList.add('hint');
+      } else {
+        viewEl.classList.remove('hint');
+        viewEl.appendChild(frag);
+        attachCheckHandlers(viewEl);
+      }
+      refreshPiP();
+    }
+
     function switchToViewMode() {
       if (!isInEditMode) return;
       isInEditMode = false;
@@ -139,17 +172,8 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       const textarea = document.getElementById('edit-raw');
       textarea.classList.remove('visible');
       viewEl.classList.remove('hidden');
-      viewEl.innerHTML = '';
 
-      const frag = renderContent(note.content);
-      if (!frag.childNodes.length) {
-        viewEl.classList.add('hint');
-      } else {
-        viewEl.classList.remove('hint');
-        viewEl.appendChild(frag);
-      }
-
-      refreshPiP();
+      renderView(viewEl);
     }
 
     function switchToEditMode() {

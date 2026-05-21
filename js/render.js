@@ -36,7 +36,27 @@ function renderContent(content) {
     }
   }
 
-  for (const line of lines) {
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
+
+    const checkMatch = line.match(/^\[([ x])\] (.*)$/i);
+    if (checkMatch) {
+      flushList();
+      const checked = checkMatch[1].toLowerCase() === 'x';
+      const div = document.createElement('div');
+      div.className = 'check-item' + (checked ? ' checked' : '');
+      div.dataset.line = lineIdx;
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = checked;
+      const span = document.createElement('span');
+      span.textContent = checkMatch[2];
+      div.appendChild(cb);
+      div.appendChild(span);
+      frag.appendChild(div);
+      continue;
+    }
+
     const bulletMatch = line.match(/^[-*] (.*)$/);
     if (bulletMatch) {
       if (!currentList) {
@@ -86,6 +106,17 @@ function renderPreview(content) {
   let inList = false;
 
   for (const line of lines) {
+    const checkMatch = line.match(/^\[([ x])\] (.*)$/i);
+    if (checkMatch) {
+      if (inList) { parts.push('</ul>'); inList = false; }
+      const checked = checkMatch[1].toLowerCase() === 'x';
+      const icon = checked ? '\u2611' : '\u2610';
+      const text = escapeHtml(checkMatch[2]);
+      const style = checked ? ' style="text-decoration:line-through;color:#999"' : '';
+      parts.push(`<div class="preview-line"${style}>${icon} ${text}</div>`);
+      continue;
+    }
+
     const bulletMatch = line.match(/^[-*] (.*)$/);
     if (bulletMatch) {
       if (!inList) { parts.push('<ul class="preview-list">'); inList = true; }
