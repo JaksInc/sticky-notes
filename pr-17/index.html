@@ -218,34 +218,8 @@
         document.getElementById('import-modal').style.display = 'none';
     });
 
-    document.getElementById('btn-popup').addEventListener('click', () => {
-      window.open('index.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
-    });
-
-    // Hide popup and pop-out controls when not applicable
-    if (window.opener !== null) {
-      document.getElementById('btn-popup').style.display = 'none';
-    }
-    if (isMobile()) {
-      document.getElementById('btn-popup').style.display = 'none';
-    }
-
-    window.addEventListener('focus', renderGrid);
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'sticky-notes') renderGrid();
-    });
-
-    document.getElementById('search-input').addEventListener('input', renderGrid);
-    document.getElementById('search-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        document.getElementById('search-input').value = '';
-        renderGrid();
-      }
-    });
-
     document.getElementById('btn-export').addEventListener('click', () => {
-      const notes = getAllNotes();
-      const json = JSON.stringify(notes, null, 2);
+      const json = JSON.stringify(getAllNotes(), null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -279,12 +253,36 @@
         for (const note of imported) {
           if (note.id && note.content !== undefined) map.set(note.id, note);
         }
-        // Sort by modified desc
         const merged = Array.from(map.values()).sort((a, b) => (b.modified || 0) - (a.modified || 0));
         localStorage.setItem('sticky-notes', JSON.stringify(merged));
         renderGrid();
       };
       reader.readAsText(file);
+    });
+
+    document.getElementById('btn-popup').addEventListener('click', () => {
+      window.open('index.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
+    });
+
+    // Hide popup and pop-out controls when not applicable
+    if (window.opener !== null) {
+      document.getElementById('btn-popup').style.display = 'none';
+    }
+    if (isMobile()) {
+      document.getElementById('btn-popup').style.display = 'none';
+    }
+
+    window.addEventListener('focus', renderGrid);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sticky-notes') renderGrid();
+    });
+
+    document.getElementById('search-input').addEventListener('input', renderGrid);
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('search-input').value = '';
+        renderGrid();
+      }
     });
 
     renderGrid();

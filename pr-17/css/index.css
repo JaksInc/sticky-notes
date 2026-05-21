@@ -170,7 +170,6 @@ body {
   .card { height: 130px; }
   .btn { padding: 9px 16px; font-size: 14px; }
   .search-input { max-width: 100%; font-size: 16px; /* prevent iOS auto-zoom */ }
-  #btn-export, #btn-import-file { font-size: 13px; padding: 7px 10px; }
 }
 
 /* ── Import by code modal ── */
