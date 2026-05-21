@@ -28,6 +28,7 @@
     <div class="view-render hint" id="view-render" tabindex="0"></div>
     <textarea class="edit-raw" id="edit-raw" placeholder="Type your note here…
 Use '- ' at the start of a line for bullet points.
+Use '[ ]' or '[x]' at the start of a line for checkboxes.
 Type digits alone for a barcode, or 'Label: digits' to label it.
 Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   </div>
@@ -39,9 +40,14 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     <div class="share-modal-box">
       <div class="share-modal-title">Share Note</div>
       <div id="share-qr"></div>
-      <input class="share-url-input" id="share-url" readonly>
+      <div class="share-code-block">
+        <div class="share-code-label">Import code</div>
+        <div class="share-code" id="share-code">Creating…</div>
+      </div>
+      <input class="share-url-input" id="share-url" readonly placeholder="Creating link…">
       <div class="share-modal-actions">
-        <button id="btn-copy-link">Copy Link</button>
+        <button id="btn-copy-code" disabled>Copy Code</button>
+        <button id="btn-copy-link" disabled>Copy Link</button>
         <button id="btn-close-share">Close</button>
       </div>
     </div>
@@ -121,6 +127,38 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       updateStatus();
     }
 
+    function attachCheckHandlers(viewEl) {
+      viewEl.querySelectorAll('.check-item input').forEach(cb => {
+        cb.addEventListener('click', (e) => {
+          e.stopPropagation(); // prevent triggering switchToEditMode
+          const lineIdx = parseInt(cb.closest('.check-item').dataset.line);
+          const lines = note.content.split('\n');
+          if (/^\[ \]/i.test(lines[lineIdx])) {
+            lines[lineIdx] = lines[lineIdx].replace(/^\[ \]/i, '[x]');
+          } else {
+            lines[lineIdx] = lines[lineIdx].replace(/^\[x\]/i, '[ ]');
+          }
+          note.content = lines.join('\n');
+          saveNote(note);
+          updateStatus();
+          renderView(viewEl);
+        });
+      });
+    }
+
+    function renderView(viewEl) {
+      viewEl.innerHTML = '';
+      const frag = renderContent(note.content);
+      if (!frag.childNodes.length) {
+        viewEl.classList.add('hint');
+      } else {
+        viewEl.classList.remove('hint');
+        viewEl.appendChild(frag);
+        attachCheckHandlers(viewEl);
+      }
+      refreshPiP();
+    }
+
     function switchToViewMode() {
       if (!isInEditMode) return;
       isInEditMode = false;
@@ -134,17 +172,8 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       const textarea = document.getElementById('edit-raw');
       textarea.classList.remove('visible');
       viewEl.classList.remove('hidden');
-      viewEl.innerHTML = '';
 
-      const frag = renderContent(note.content);
-      if (!frag.childNodes.length) {
-        viewEl.classList.add('hint');
-      } else {
-        viewEl.classList.remove('hint');
-        viewEl.appendChild(frag);
-      }
-
-      refreshPiP();
+      renderView(viewEl);
     }
 
     function switchToEditMode() {
@@ -173,53 +202,87 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }, 300);
     }
 
-    // ── Share ──────────────────────────────────────────
-    function buildShareUrl() {
+    function buildBase64Url() {
       const payload = btoa(unescape(encodeURIComponent(
         JSON.stringify({ content: note.content, color: note.color })
       )));
       return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
     }
 
-    function decodeSharePayload(encoded) {
-      try {
-        return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(encoded)))));
-      } catch { return null; }
+    // ── Share via MantleDB (anonymous key-value, ID generated client-side) ─
+    async function createShareBlob() {
+      const id = crypto.randomUUID().replace(/-/g, '');
+      const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: note.content, color: note.color })
+      });
+      if (!resp.ok) throw new Error(resp.status);
+      return id;
+    }
+
+    function closeShareModal() {
+      document.getElementById('share-modal').style.display = 'none';
+      document.getElementById('btn-copy-code').textContent = 'Copy Code';
+      document.getElementById('btn-copy-link').textContent = 'Copy Link';
+      document.getElementById('btn-copy-code').disabled = true;
+      document.getElementById('btn-copy-link').disabled = true;
+      document.getElementById('share-code').style.color = '';
     }
 
     function initShareHandlers() {
-      document.getElementById('btn-share').addEventListener('click', () => {
-        const url = buildShareUrl();
-        document.getElementById('share-url').value = url;
+      document.getElementById('btn-share').addEventListener('click', async () => {
+        // Show modal immediately with QR + URL from local base64 — no network needed
+        const baseUrl = buildBase64Url();
+        document.getElementById('share-url').value = baseUrl;
         document.getElementById('share-qr').innerHTML = '';
         new QRCode(document.getElementById('share-qr'), {
-          text: url,
-          width: 180,
-          height: 180,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
+          text: baseUrl, width: 180, height: 180,
+          colorDark: '#000000', colorLight: '#ffffff',
         });
+        document.getElementById('btn-copy-link').disabled = false;
+        document.getElementById('btn-copy-code').disabled = true;
+        document.getElementById('share-code').textContent = 'Generating…';
+        document.getElementById('share-code').style.color = '';
         document.getElementById('share-modal').style.display = 'flex';
+
+        // Try to get a short typeable code in the background
+        try {
+          const blobId = await createShareBlob();
+          const blobUrl = location.origin + location.pathname + '?gist=' + blobId;
+          const p = blobId.match(/.{8}/g);
+          document.getElementById('share-code').innerHTML = p[0] + ' ' + p[1] + '<br>' + p[2] + ' ' + p[3];
+          document.getElementById('share-code').style.color = '';
+          document.getElementById('share-url').value = blobUrl;
+          document.getElementById('btn-copy-code').disabled = false;
+          // Regenerate QR with the shorter blob URL
+          document.getElementById('share-qr').innerHTML = '';
+          new QRCode(document.getElementById('share-qr'), {
+            text: blobUrl, width: 180, height: 180,
+            colorDark: '#000000', colorLight: '#ffffff',
+          });
+        } catch {
+          document.getElementById('share-code').textContent = 'Code unavailable';
+          document.getElementById('share-code').style.color = '#999';
+        }
+      });
+
+      document.getElementById('btn-copy-code').addEventListener('click', () => {
+        const code = document.getElementById('share-code').textContent.replace(/\s/g, '');
+        navigator.clipboard.writeText(code)
+          .then(() => { document.getElementById('btn-copy-code').textContent = 'Copied!'; })
+          .catch(() => {});
       });
 
       document.getElementById('btn-copy-link').addEventListener('click', () => {
-        const btn = document.getElementById('btn-copy-link');
         navigator.clipboard.writeText(document.getElementById('share-url').value)
-          .then(() => { btn.textContent = 'Copied!'; })
+          .then(() => { document.getElementById('btn-copy-link').textContent = 'Copied!'; })
           .catch(() => { document.getElementById('share-url').select(); });
       });
 
-      document.getElementById('btn-close-share').addEventListener('click', () => {
-        document.getElementById('share-modal').style.display = 'none';
-        document.getElementById('btn-copy-link').textContent = 'Copy Link';
-      });
-
-      // Close modal on backdrop click
+      document.getElementById('btn-close-share').addEventListener('click', closeShareModal);
       document.getElementById('share-modal').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('share-modal')) {
-          document.getElementById('share-modal').style.display = 'none';
-          document.getElementById('btn-copy-link').textContent = 'Copy Link';
-        }
+        if (e.target === document.getElementById('share-modal')) closeShareModal();
       });
     }
 
@@ -289,7 +352,25 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }
     }
 
-    // ── Import mode (opened via shared URL) ───────────
+    // ── Import mode (opened via shared URL or blob) ───
+    async function initGistImportMode(blobId) {
+      document.getElementById('color-bar').innerHTML =
+        '<span class="import-banner">Loading shared note…</span>';
+      try {
+        const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + blobId,
+          { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) throw new Error();
+        initImportMode(await resp.json());
+      } catch {
+        document.getElementById('color-bar').innerHTML =
+          '<span class="import-banner">Could not load note.</span>';
+        const viewEl = document.getElementById('view-render');
+        viewEl.classList.remove('hint');
+        viewEl.textContent = 'This share code is invalid or has expired.';
+        document.getElementById('status-bar').textContent = '';
+      }
+    }
+
     function initImportMode(payload) {
       note = {
         id: null,
@@ -323,11 +404,17 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
     // ── Main init ─────────────────────────────────────
     function init() {
-      // Import mode — shared URL
+      // Gist import mode
+      const gistId = getParam('gist');
+      if (gistId) { initGistImportMode(gistId); return; }
+
+      // Legacy base64 import mode
       const importData = getParam('import');
       if (importData) {
-        const payload = decodeSharePayload(importData);
-        if (payload) { initImportMode(payload); return; }
+        try {
+          const payload = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(importData)))));
+          if (payload) { initImportMode(payload); return; }
+        } catch {}
       }
 
       const id = getParam('id');

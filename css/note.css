@@ -141,6 +141,30 @@ textarea.edit-raw.visible { display: block; }
   margin: 1px 0;
 }
 
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 0;
+}
+.check-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #4a90d9;
+}
+.check-item span {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #222;
+}
+.check-item.checked span {
+  text-decoration: line-through;
+  color: #999;
+}
+
 /* ── Inline barcode row: Label  Number  ▌▌▌▌▌ ── */
 .barcode-inline {
   display: flex;
@@ -207,9 +231,35 @@ textarea.edit-raw.visible { display: block; }
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  max-width: 260px;
+  max-width: 300px;
   width: 90%;
   box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+
+.share-code-block {
+  width: 100%;
+  text-align: center;
+}
+
+.share-code-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.share-code {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  letter-spacing: 1px;
+  text-align: center;
+  line-height: 1.8;
+  padding: 10px 14px;
+  background: #f5f5f5;
+  border-radius: 6px;
 }
 
 .share-modal-title {
@@ -223,7 +273,7 @@ textarea.edit-raw.visible { display: block; }
   padding: 6px 8px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: 16px; /* 16px prevents iOS auto-zoom; readonly so size matters less */
   color: #555;
   font-family: monospace;
 }
@@ -231,10 +281,12 @@ textarea.edit-raw.visible { display: block; }
 .share-modal-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .share-modal-actions button {
-  padding: 7px 16px;
+  padding: 7px 14px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
