@@ -278,6 +278,48 @@
         document.getElementById('import-modal').style.display = 'none';
     });
 
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const json = JSON.stringify(getAllNotes(), null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sticky-notes-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('btn-import-file').addEventListener('click', () => {
+      document.getElementById('import-file-input').value = '';
+      document.getElementById('import-file-input').click();
+    });
+
+    document.getElementById('import-file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        let imported;
+        try {
+          imported = JSON.parse(ev.target.result);
+          if (!Array.isArray(imported)) throw new Error();
+        } catch {
+          alert('Invalid backup file.');
+          return;
+        }
+        if (!confirm(`Import ${imported.length} note${imported.length !== 1 ? 's' : ''}? Notes with matching IDs will be overwritten.`)) return;
+        const existing = getAllNotes();
+        const map = new Map(existing.map(n => [n.id, n]));
+        for (const note of imported) {
+          if (note.id && note.content !== undefined) map.set(note.id, note);
+        }
+        const merged = Array.from(map.values()).sort((a, b) => (b.modified || 0) - (a.modified || 0));
+        localStorage.setItem('sticky-notes', JSON.stringify(merged));
+        renderGrid();
+      };
+      reader.readAsText(file);
+    });
+
     document.getElementById('btn-popup').addEventListener('click', () => {
       window.open('index.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
     });
