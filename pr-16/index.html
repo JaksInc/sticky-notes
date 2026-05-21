@@ -16,10 +16,14 @@
 <body>
   <div class="toolbar">
     <h1>📋 Sticky Notes</h1>
+    <input type="search" id="search-input" class="search-input" placeholder="Search notes…" autocomplete="off">
     <button class="btn btn-primary" id="btn-new">+ New Note</button>
     <button class="btn btn-secondary" id="btn-import-code">Import by Code</button>
-    <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
+    <button class="btn btn-secondary" id="btn-export">↓ Export</button>
+    <button class="btn btn-secondary" id="btn-import-file">↑ Import</button>
+    <input type="file" id="import-file-input" accept=".json" style="display:none">
     <button class="btn btn-secondary" id="btn-view-toggle" title="Switch view">⊞ Grid</button>
+    <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
   </div>
   <!-- Import by code modal -->
   <div class="import-modal" id="import-modal" style="display:none">
@@ -57,45 +61,60 @@
   <script src="js/render.js"></script>
   <script>
     const openWindows = new Map();
-
     let currentView = localStorage.getItem('sticky-notes-view') || 'grid';
 
     function setView(view) {
       currentView = view;
       localStorage.setItem('sticky-notes-view', view);
       const btn = document.getElementById('btn-view-toggle');
-      const container = document.getElementById('grid');
+      const gridEl = document.getElementById('grid');
       if (view === 'list') {
-        container.className = 'list';
+        gridEl.className = 'list';
         btn.textContent = '≡ List';
       } else {
-        container.className = 'grid';
+        gridEl.className = 'grid';
         btn.textContent = '⊞ Grid';
       }
       renderGrid();
     }
-
-    document.getElementById('btn-view-toggle').addEventListener('click', () => {
-      setView(currentView === 'grid' ? 'list' : 'grid');
-    });
 
     function isMobile() {
       return window.innerWidth < 768 || 'ontouchstart' in window;
     }
 
     function renderGrid() {
-      const notes = getAllNotes();
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+      let notes = getAllNotes();
+      if (query) notes = notes.filter(n => n.content.toLowerCase().includes(query));
+
       const grid = document.getElementById('grid');
       const emptyState = document.getElementById('empty-state');
       grid.innerHTML = '';
 
       if (notes.length === 0) {
         emptyState.style.display = '';
+        if (query) {
+          emptyState.textContent = `No notes match "${query}"`;
+        } else {
+          emptyState.innerHTML = 'No notes yet — click <strong>+ New Note</strong> to get started.';
+        }
         return;
       }
       emptyState.style.display = 'none';
 
       for (const note of notes) {
+        const openBtn = document.createElement('button');
+        openBtn.className = 'card-btn';
+        openBtn.title = 'Open note';
+        openBtn.textContent = '✎';
+        openBtn.addEventListener('click', (e) => { e.stopPropagation(); openNote(note.id); });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'card-btn delete';
+        delBtn.title = 'Delete note';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteNoteUI(note.id); });
+
         if (currentView === 'list') {
           const row = document.createElement('div');
           row.className = 'list-row';
@@ -108,39 +127,28 @@
           main.className = 'list-main';
           main.addEventListener('click', () => openNote(note.id));
 
-          const title = note.content.split('\n')[0].trim() || 'Empty note';
           const titleEl = document.createElement('div');
           titleEl.className = 'list-title';
-          titleEl.textContent = title;
+          titleEl.textContent = note.content.split('\n')[0].trim() || 'Empty note';
 
-          const preview = document.createElement('div');
-          preview.className = 'list-preview';
           const previewLines = note.content.split('\n').slice(1).filter(l => l.trim()).slice(0, 3);
-          preview.textContent = previewLines.join(' · ') || '';
+          if (previewLines.length) {
+            const preview = document.createElement('div');
+            preview.className = 'list-preview';
+            preview.textContent = previewLines.join(' · ');
+            main.appendChild(titleEl);
+            main.appendChild(preview);
+          } else {
+            main.appendChild(titleEl);
+          }
 
           const meta = document.createElement('div');
           meta.className = 'list-meta';
           meta.textContent = new Date(note.modified).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-          main.appendChild(titleEl);
-          if (previewLines.length) main.appendChild(preview);
           main.appendChild(meta);
 
           const actions = document.createElement('div');
           actions.className = 'list-actions';
-
-          const openBtn = document.createElement('button');
-          openBtn.className = 'card-btn';
-          openBtn.title = 'Open note';
-          openBtn.textContent = '✎';
-          openBtn.addEventListener('click', (e) => { e.stopPropagation(); openNote(note.id); });
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'card-btn delete';
-          delBtn.title = 'Delete note';
-          delBtn.textContent = '✕';
-          delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteNoteUI(note.id); });
-
           actions.appendChild(openBtn);
           actions.appendChild(delBtn);
 
@@ -168,21 +176,9 @@
 
           const actions = document.createElement('div');
           actions.className = 'card-actions';
-
-          const openBtn = document.createElement('button');
-          openBtn.className = 'card-btn';
-          openBtn.title = 'Open note';
-          openBtn.textContent = '✎';
-          openBtn.addEventListener('click', (e) => { e.stopPropagation(); openNote(note.id); });
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'card-btn delete';
-          delBtn.title = 'Delete note';
-          delBtn.textContent = '✕';
-          delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteNoteUI(note.id); });
-
           actions.appendChild(openBtn);
           actions.appendChild(delBtn);
+
           card.appendChild(body);
           card.appendChild(actions);
           grid.appendChild(card);
@@ -299,7 +295,19 @@
       if (e.key === 'sticky-notes') renderGrid();
     });
 
-    setView(currentView); // sets class and calls renderGrid()
+    document.getElementById('search-input').addEventListener('input', renderGrid);
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('search-input').value = '';
+        renderGrid();
+      }
+    });
+
+    document.getElementById('btn-view-toggle').addEventListener('click', () => {
+      setView(currentView === 'grid' ? 'list' : 'grid');
+    });
+
+    setView(currentView);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });

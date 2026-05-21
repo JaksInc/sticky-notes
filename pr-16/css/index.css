@@ -140,22 +140,8 @@ body {
 .card-btn:hover { background: rgba(0,0,0,.1); }
 .card-btn.delete:hover { color: #c00; }
 
-/* ── Mobile ── */
-@media (max-width: 480px) {
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
-  }
-  .card { height: 130px; }
-  .btn { padding: 9px 16px; font-size: 14px; }
-}
-
 /* ── List view ── */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.list { display: flex; flex-direction: column; gap: 6px; }
 
 .list-row {
   display: flex;
@@ -163,16 +149,12 @@ body {
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,.14);
   overflow: hidden;
-  cursor: default;
   background: #fff;
   transition: box-shadow .15s;
 }
 .list-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,.2); }
 
-.list-swatch {
-  width: 8px;
-  flex-shrink: 0;
-}
+.list-swatch { width: 8px; flex-shrink: 0; }
 
 .list-main {
   flex: 1;
@@ -200,11 +182,7 @@ body {
   text-overflow: ellipsis;
 }
 
-.list-meta {
-  font-size: 11px;
-  color: #aaa;
-  margin-top: 4px;
-}
+.list-meta { font-size: 11px; color: #aaa; margin-top: 4px; }
 
 .list-actions {
   display: flex;
@@ -212,6 +190,38 @@ body {
   gap: 2px;
   padding: 0 6px;
   flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 280px;
+  padding: 7px 12px;
+  border: 1px solid rgba(0,0,0,.18);
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  background: rgba(255,255,255,.7);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-input:focus {
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+  background: #fff;
+}
+/* Hide the browser's built-in ✕ clear button — we handle Escape */
+.search-input::-webkit-search-cancel-button { display: none; }
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .card { height: 130px; }
+  .btn { padding: 9px 16px; font-size: 14px; }
+  .search-input { max-width: 100%; font-size: 16px; /* prevent iOS auto-zoom */ }
 }
 
 /* ── Import by code modal ── */
