@@ -140,6 +140,27 @@ body {
 .card-btn:hover { background: rgba(0,0,0,.1); }
 .card-btn.delete:hover { color: #c00; }
 
+.search-input {
+  flex: 1;
+  max-width: 280px;
+  padding: 7px 12px;
+  border: 1px solid rgba(0,0,0,.18);
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  background: rgba(255,255,255,.7);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-input:focus {
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+  background: #fff;
+}
+/* Hide the browser's built-in ✕ clear button — we handle Escape */
+.search-input::-webkit-search-cancel-button { display: none; }
+
 /* ── Mobile ── */
 @media (max-width: 480px) {
   .grid {
@@ -148,6 +169,7 @@ body {
   }
   .card { height: 130px; }
   .btn { padding: 9px 16px; font-size: 14px; }
+  .search-input { max-width: 100%; font-size: 16px; /* prevent iOS auto-zoom */ }
 }
 
 /* ── Import by code modal ── */

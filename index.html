@@ -16,8 +16,12 @@
 <body>
   <div class="toolbar">
     <h1>📋 Sticky Notes</h1>
+    <input type="search" id="search-input" class="search-input" placeholder="Search notes…" autocomplete="off">
     <button class="btn btn-primary" id="btn-new">+ New Note</button>
     <button class="btn btn-secondary" id="btn-import-code">Import by Code</button>
+    <button class="btn btn-secondary" id="btn-export">↓ Export</button>
+    <button class="btn btn-secondary" id="btn-import-file">↑ Import</button>
+    <input type="file" id="import-file-input" accept=".json" style="display:none">
     <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
   </div>
   <!-- Import by code modal -->
@@ -62,13 +66,21 @@
     }
 
     function renderGrid() {
-      const notes = getAllNotes();
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+      let notes = getAllNotes();
+      if (query) notes = notes.filter(n => n.content.toLowerCase().includes(query));
+
       const grid = document.getElementById('grid');
       const emptyState = document.getElementById('empty-state');
       grid.innerHTML = '';
 
       if (notes.length === 0) {
         emptyState.style.display = '';
+        if (query) {
+          emptyState.textContent = `No notes match "${query}"`;
+        } else {
+          emptyState.innerHTML = 'No notes yet — click <strong>+ New Note</strong> to get started.';
+        }
         return;
       }
       emptyState.style.display = 'none';
@@ -221,6 +233,14 @@
     window.addEventListener('focus', renderGrid);
     window.addEventListener('storage', (e) => {
       if (e.key === 'sticky-notes') renderGrid();
+    });
+
+    document.getElementById('search-input').addEventListener('input', renderGrid);
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('search-input').value = '';
+        renderGrid();
+      }
     });
 
     renderGrid();

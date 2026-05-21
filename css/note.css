@@ -141,6 +141,30 @@ textarea.edit-raw.visible { display: block; }
   margin: 1px 0;
 }
 
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 0;
+}
+.check-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #4a90d9;
+}
+.check-item span {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #222;
+}
+.check-item.checked span {
+  text-decoration: line-through;
+  color: #999;
+}
+
 /* ── Inline barcode row: Label  Number  ▌▌▌▌▌ ── */
 .barcode-inline {
   display: flex;
