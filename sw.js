@@ -1,15 +1,20 @@
-const CACHE = 'sticky-notes-85bc3138d2a1e83f4fa888f5485257efb846fe44';
+const CACHE = 'sticky-notes-0842be95472e710e646356c5c882c4ccda829ea8';
 
 const ASSETS = [
   './',
   './index.html',
+  './notes.html',
   './note.html',
   './manifest.json',
   './js/storage.js',
   './js/barcode.js',
   './js/render.js',
+  './js/dashboard.js',
+  './js/icons.js',
+  './css/tokens.css',
   './css/index.css',
   './css/note.css',
+  './css/dashboard.css',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon.svg',
