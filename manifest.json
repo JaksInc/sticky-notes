@@ -2,7 +2,7 @@
   "name": "Sticky Notes",
   "short_name": "Sticky Notes",
   "description": "Sticky notes with barcode support for UPC, EAN, and Home Depot SKUs",
-  "start_url": "./dashboard.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

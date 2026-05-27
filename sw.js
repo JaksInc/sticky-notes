@@ -3,7 +3,7 @@ const CACHE = 'sticky-notes-__COMMIT__';
 const ASSETS = [
   './',
   './index.html',
-  './dashboard.html',
+  './notes.html',
   './note.html',
   './manifest.json',
   './js/storage.js',

@@ -104,7 +104,29 @@
   font-weight: 700;
 }
 
-/* ── Quick Memo ── */
+/* ── Pinned note (Quick Memo) ── */
+.widget-memo {
+  transition: background .2s;
+}
+
+.memo-swatches {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.memo-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,.2);
+  cursor: pointer;
+  transition: transform .1s, border-color .1s;
+  flex-shrink: 0;
+}
+.memo-swatch:hover { transform: scale(1.25); }
+.memo-swatch.active { border-color: rgba(0,0,0,.55); box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+
 .memo-body {
   padding: 0;
   display: flex;
