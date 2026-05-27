@@ -1,7 +1,7 @@
 {
-  "name": "Sticky Notes",
-  "short_name": "Sticky Notes",
-  "description": "Sticky notes with barcode support for UPC, EAN, and Home Depot SKUs",
+  "name": "Quarterboard",
+  "short_name": "Quarterboard",
+  "description": "Dashboard with sticky notes, todos, calendar, and barcode support",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
