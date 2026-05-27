@@ -141,12 +141,12 @@ Button padding formula: `(--space-2) (--space-3)` → `8px 12px`; small buttons:
 ## Iconography
 
 ### Style: Filled SVG
-All UI icons (action buttons, status indicators) must be **filled SVG**, not outline or emoji. Exceptions are widget header titles, which use emoji for warmth and fast rendering.
+All icons everywhere — action buttons, status indicators, widget header titles — must be **filled SVG**. No emoji anywhere in the UI. Emoji render differently across OS and browser, creating visual inconsistency.
 
 ### Sources
-- UI icons: inline SVG or a single sprite. No external icon CDN.
-- Widget headers: emoji (`📅`, `📌`, `✓`, `🗒`) — these are presentation, not interactive.
-- Action icons: filled SVG only (edit pencil, delete ×, open ↗, pin, swap).
+- All icons: inline SVG via `js/icons.js`. No external icon CDN. No emoji.
+- Widget headers: use filled SVG icons (calendar, bookmark, checklist, document) via `data-icon` attribute on a `.widget-icon` span, populated by `icon()` on page load.
+- Action icons: filled SVG (edit pencil, trash, arrow-left, share, pin, swap, etc.).
 
 ### Icon sizes
 | Context | Size |

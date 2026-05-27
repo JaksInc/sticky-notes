@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quarterboard — Notes</title>
+  <script>
+    (function(){var t=localStorage.getItem('qb-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -15,16 +19,17 @@
 </head>
 <body>
   <div class="toolbar">
-    <a href="index.html" class="btn btn-secondary toolbar-back">← Dashboard</a>
+    <a href="index.html" class="btn btn-secondary toolbar-back" id="btn-back-dashboard"></a>
     <h1>All Notes</h1>
     <input type="search" id="search-input" class="search-input" placeholder="Search notes…" autocomplete="off">
-    <button class="btn btn-primary" id="btn-new">+ New Note</button>
+    <button class="btn btn-primary" id="btn-new"></button>
     <button class="btn btn-secondary" id="btn-import-code">Import by Code</button>
-    <button class="btn btn-secondary" id="btn-export">↓ Export</button>
-    <button class="btn btn-secondary" id="btn-import-file">↑ Import</button>
+    <button class="btn btn-secondary" id="btn-export"></button>
+    <button class="btn btn-secondary" id="btn-import-file"></button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
-    <button class="btn btn-secondary" id="btn-view-toggle" title="Switch view">⊞ Grid</button>
-    <button class="btn btn-secondary" id="btn-popup" title="Open in popup window">⧉ Pop Out</button>
+    <button class="btn btn-secondary" id="btn-view-toggle" title="Switch view"></button>
+    <button class="btn btn-secondary" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode"></button>
+    <button class="btn btn-secondary" id="btn-popup" title="Open in popup window"></button>
   </div>
   <!-- Import by code modal -->
   <div class="import-modal" id="import-modal" style="display:none">
@@ -53,10 +58,11 @@
   <div class="grid-container">
     <div class="grid" id="grid"></div>
     <div class="empty-state" id="empty-state" style="display:none">
-      No notes yet — click <strong>+ New Note</strong> to get started.
+      No notes yet — click <strong>New Note</strong> to get started.
     </div>
   </div>
 
+  <script src="js/icons.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>
@@ -71,10 +77,10 @@
       const gridEl = document.getElementById('grid');
       if (view === 'list') {
         gridEl.className = 'list';
-        btn.textContent = '≡ List';
+        btn.innerHTML = icon('list', 14) + ' List';
       } else {
         gridEl.className = 'grid';
-        btn.textContent = '⊞ Grid';
+        btn.innerHTML = icon('grid', 14) + ' Grid';
       }
       renderGrid();
     }
@@ -97,7 +103,7 @@
         if (query) {
           emptyState.textContent = `No notes match "${query}"`;
         } else {
-          emptyState.innerHTML = 'No notes yet — click <strong>+ New Note</strong> to get started.';
+          emptyState.innerHTML = 'No notes yet — click <strong>New Note</strong> to get started.';
         }
         return;
       }
@@ -107,13 +113,13 @@
         const openBtn = document.createElement('button');
         openBtn.className = 'card-btn';
         openBtn.title = 'Open note';
-        openBtn.textContent = '✎';
+        openBtn.innerHTML = icon('pencil', 14);
         openBtn.addEventListener('click', (e) => { e.stopPropagation(); openNote(note.id); });
 
         const delBtn = document.createElement('button');
         delBtn.className = 'card-btn delete';
         delBtn.title = 'Delete note';
-        delBtn.textContent = '✕';
+        delBtn.innerHTML = icon('trash', 14);
         delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteNoteUI(note.id); });
 
         if (currentView === 'list') {
@@ -325,7 +331,6 @@
       window.open('notes.html', 'sticky-main', 'popup=1,width=820,height=600,resizable=yes');
     });
 
-    // Hide popup and pop-out controls when not applicable
     if (window.opener !== null) {
       document.getElementById('btn-popup').style.display = 'none';
     }
@@ -349,6 +354,13 @@
     document.getElementById('btn-view-toggle').addEventListener('click', () => {
       setView(currentView === 'grid' ? 'list' : 'grid');
     });
+
+    // Set toolbar button labels with icons
+    document.getElementById('btn-back-dashboard').innerHTML = icon('back', 14) + ' Dashboard';
+    document.getElementById('btn-new').innerHTML = icon('plus', 14) + ' New Note';
+    document.getElementById('btn-export').innerHTML = icon('download', 14) + ' Export';
+    document.getElementById('btn-import-file').innerHTML = icon('upload', 14) + ' Import';
+    document.getElementById('btn-popup').innerHTML = icon('popout', 14) + ' Pop Out';
 
     setView(currentView);
 
