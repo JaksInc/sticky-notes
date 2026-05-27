@@ -73,10 +73,10 @@
 
   // ── Pinned note (Quick Memo) ────────────────────────────────────────────
 
-  function mkBtn(text, title, cls, onClick) {
+  function mkBtn(html, title, cls, onClick) {
     const btn = document.createElement('button');
     btn.className = 'btn ' + cls;
-    btn.textContent = text;
+    btn.innerHTML = html;
     if (title) btn.title = title;
     btn.addEventListener('click', onClick);
     return btn;
@@ -92,12 +92,11 @@
     body.innerHTML   = '';
 
     if (memoPickerOpen) {
-      // ── Picker state ─────────────────────────────────────────────────
-      widget.style.background = '#fff';
+      widget.style.background = '';
 
       if (pinnedId) {
         header.appendChild(
-          mkBtn('↩ Cancel', 'Go back', 'btn-secondary btn-sm', () => {
+          mkBtn(icon('cancel', 14) + ' Cancel', 'Go back', 'btn-secondary btn-sm', () => {
             memoPickerOpen = false;
             renderMemo();
           })
@@ -109,11 +108,10 @@
     }
 
     if (!pinnedId) {
-      // ── Empty / no note selected ──────────────────────────────────────
-      widget.style.background = '#fff';
+      widget.style.background = '';
 
       header.appendChild(
-        mkBtn('Pin a note', '', 'btn-primary btn-sm', () => {
+        mkBtn(icon('pin', 14) + ' Pin a note', '', 'btn-primary btn-sm', () => {
           memoPickerOpen = true;
           renderMemo();
         })
@@ -121,13 +119,17 @@
 
       const placeholder = document.createElement('div');
       placeholder.className = 'memo-placeholder';
-      placeholder.innerHTML =
-        '<p>No note pinned.</p>' +
-        '<button class="btn btn-primary">Pin a note</button>';
-      placeholder.querySelector('button').addEventListener('click', () => {
+      const p = document.createElement('p');
+      p.textContent = 'No note pinned.';
+      const pinBtn = document.createElement('button');
+      pinBtn.className = 'btn btn-primary';
+      pinBtn.innerHTML = icon('pin', 14) + ' Pin a note';
+      pinBtn.addEventListener('click', () => {
         memoPickerOpen = true;
         renderMemo();
       });
+      placeholder.appendChild(p);
+      placeholder.appendChild(pinBtn);
       body.appendChild(placeholder);
       return;
     }
@@ -162,12 +164,12 @@
     });
     header.appendChild(swatchWrap);
 
-    header.appendChild(mkBtn('↔ Swap', 'Pin a different note', 'btn-secondary btn-sm', () => {
+    header.appendChild(mkBtn(icon('swap', 14) + ' Swap', 'Pin a different note', 'btn-secondary btn-sm', () => {
       memoPickerOpen = true;
       renderMemo();
     }));
 
-    header.appendChild(mkBtn('✎ Open', 'Open in editor', 'btn-secondary btn-sm', () => {
+    header.appendChild(mkBtn(icon('pencil', 14) + ' Open', 'Open in editor', 'btn-secondary btn-sm', () => {
       openNote(pinnedId);
     }));
 
@@ -225,7 +227,7 @@
         if (note.id === currentPinnedId) {
           const check = document.createElement('span');
           check.className = 'note-picker-check';
-          check.textContent = '✓';
+          check.innerHTML = icon('check', 14);
           item.appendChild(check);
         }
         item.addEventListener('click', () => {
@@ -241,7 +243,7 @@
     // Create new note option
     const newItem = document.createElement('button');
     newItem.className = 'note-picker-item note-picker-new';
-    newItem.textContent = '+ New note';
+    newItem.innerHTML = icon('plus', 14) + ' New note';
     newItem.addEventListener('click', () => {
       const note = createNote();
       localStorage.setItem(PINNED_KEY, note.id);
@@ -309,7 +311,7 @@
 
       const del = document.createElement('button');
       del.className = 'todo-del';
-      del.textContent = '×';
+      del.innerHTML = icon('trash', 14);
       del.title = 'Delete task';
       del.addEventListener('click', () => {
         const all = loadTodos();
@@ -407,13 +409,13 @@
       const openBtn = document.createElement('button');
       openBtn.className = 'card-btn';
       openBtn.title = 'Open note';
-      openBtn.textContent = '✎';
+      openBtn.innerHTML = icon('pencil', 14);
       openBtn.addEventListener('click', e => { e.stopPropagation(); openNote(note.id); });
 
       const delBtn = document.createElement('button');
       delBtn.className = 'card-btn delete';
       delBtn.title = 'Delete note';
-      delBtn.textContent = '✕';
+      delBtn.innerHTML = icon('trash', 14);
       delBtn.addEventListener('click', e => {
         e.stopPropagation();
         if (!confirm('Delete this note?')) return;

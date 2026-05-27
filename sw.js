@@ -1,4 +1,4 @@
-const CACHE = 'sticky-notes-__COMMIT__';
+const CACHE = 'sticky-notes-v3';
 
 const ASSETS = [
   './',
@@ -10,6 +10,8 @@ const ASSETS = [
   './js/barcode.js',
   './js/render.js',
   './js/dashboard.js',
+  './js/icons.js',
+  './css/tokens.css',
   './css/index.css',
   './css/note.css',
   './css/dashboard.css',

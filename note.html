@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Note</title>
+  <script>
+    (function(){var t=localStorage.getItem('qb-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -17,11 +21,12 @@
 </head>
 <body>
   <div class="color-bar" id="color-bar">
-    <a class="back-btn" id="btn-back" href="notes.html" style="display:none">← Notes</a>
+    <a class="back-btn" id="btn-back" href="notes.html" style="display:none"></a>
     <span class="color-bar-label">Color:</span>
-    <button class="pin-btn" id="btn-pin" style="display:none">📌 Pin</button>
-    <button class="share-btn" id="btn-share" style="display:none">Share ↗</button>
-    <button class="save-btn" id="btn-save" style="display:none">Save</button>
+    <button class="pin-btn" id="btn-pin" style="display:none">Pin</button>
+    <button class="share-btn" id="btn-share" style="display:none"></button>
+    <button class="btn-secondary save-btn" id="btn-save" style="display:none">Save</button>
+    <button class="pin-btn" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode" style="margin-left:auto"></button>
   </div>
 
   <div class="content-area" id="content-area">
@@ -53,6 +58,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     </div>
   </div>
 
+  <script src="js/icons.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>
@@ -130,7 +136,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     function attachCheckHandlers(viewEl) {
       viewEl.querySelectorAll('.check-item input').forEach(cb => {
         cb.addEventListener('click', (e) => {
-          e.stopPropagation(); // prevent triggering switchToEditMode
+          e.stopPropagation();
           const lineIdx = parseInt(cb.closest('.check-item').dataset.line);
           const lines = note.content.split('\n');
           if (/^\[ \]/i.test(lines[lineIdx])) {
@@ -162,7 +168,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       const btn = document.getElementById('btn-pin');
       if (!btn || !note) return;
       const pinned = localStorage.getItem('sticky-pinned') === note.id;
-      btn.textContent = pinned ? '📌 Pinned' : '📌 Pin';
+      btn.innerHTML = icon('pin', 14) + (pinned ? ' Pinned' : ' Pin');
       btn.classList.toggle('pinned', pinned);
     }
 
@@ -225,7 +231,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
     }
 
-    // ── Share via MantleDB (anonymous key-value, ID generated client-side) ─
     async function createShareBlob() {
       const id = crypto.randomUUID().replace(/-/g, '');
       const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
@@ -247,8 +252,9 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
     }
 
     function initShareHandlers() {
+      document.getElementById('btn-share').innerHTML = icon('share', 14) + ' Share';
+
       document.getElementById('btn-share').addEventListener('click', async () => {
-        // Show modal immediately with QR + URL from local base64 — no network needed
         const baseUrl = buildBase64Url();
         document.getElementById('share-url').value = baseUrl;
         document.getElementById('share-qr').innerHTML = '';
@@ -262,7 +268,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         document.getElementById('share-code').style.color = '';
         document.getElementById('share-modal').style.display = 'flex';
 
-        // Try to get a short typeable code in the background
         try {
           const blobId = await createShareBlob();
           const blobUrl = location.origin + location.pathname + '?gist=' + blobId;
@@ -271,7 +276,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
           document.getElementById('share-code').style.color = '';
           document.getElementById('share-url').value = blobUrl;
           document.getElementById('btn-copy-code').disabled = false;
-          // Regenerate QR with the shorter blob URL
           document.getElementById('share-qr').innerHTML = '';
           new QRCode(document.getElementById('share-qr'), {
             text: blobUrl, width: 180, height: 180,
@@ -302,7 +306,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       });
     }
 
-    // ── Import mode (opened via shared URL or blob) ───
     async function initGistImportMode(blobId) {
       document.getElementById('color-bar').innerHTML =
         '<span class="import-banner">Loading shared note…</span>';
@@ -352,13 +355,10 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       });
     }
 
-    // ── Main init ─────────────────────────────────────
     function init() {
-      // Gist import mode
       const gistId = getParam('gist');
       if (gistId) { initGistImportMode(gistId); return; }
 
-      // Legacy base64 import mode
       const importData = getParam('import');
       if (importData) {
         try {
@@ -378,16 +378,18 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       updateTitle();
       updateStatus();
 
-      // Show back button when not in a popup
+      // Back button
+      const backBtn = document.getElementById('btn-back');
       if (window.opener === null) {
-        document.getElementById('btn-back').style.display = '';
+        backBtn.style.display = '';
+        backBtn.innerHTML = icon('back', 14) + ' Notes';
       }
 
       initShareHandlers();
 
       document.getElementById('btn-pin').addEventListener('click', toggleDashboardPin);
 
-      isInEditMode = true; // allow switchToViewMode to render on first load
+      isInEditMode = true;
       switchToViewMode();
 
       document.getElementById('view-render').addEventListener('click', switchToEditMode);
