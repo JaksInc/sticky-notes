@@ -10,13 +10,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Sticky Notes">
-  <meta name="theme-color" content="#4a90d9">
+  <meta name="theme-color" content="#f96302">
   <link rel="stylesheet" href="css/index.css">
   <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
   <div class="toolbar">
-    <h1>📋 Sticky Notes</h1>
+    <h1>Dashboard</h1>
+    <button class="btn btn-secondary" id="btn-popout" title="Open in popup window">⧉ Pop Out</button>
   </div>
 
   <div class="widget-grid">
@@ -32,7 +33,7 @@
     <!-- Pinned note widget -->
     <div class="widget widget-memo">
       <div class="widget-header">
-        <span class="widget-title">📝 Quick Memo</span>
+        <span class="widget-title">📌 Pinned Note</span>
         <div class="widget-header-actions" id="memo-header-actions"></div>
       </div>
       <div class="widget-body memo-body" id="memo-body"></div>

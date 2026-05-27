@@ -449,6 +449,18 @@
   initTodos();
   initNotes();
 
+  // Pop-out button
+  const popoutBtn = document.getElementById('btn-popout');
+  if (popoutBtn) {
+    if (window.opener !== null || isMobile()) {
+      popoutBtn.style.display = 'none';
+    } else {
+      popoutBtn.addEventListener('click', () => {
+        window.open('index.html', 'sticky-dashboard', 'popup=1,width=1100,height=700,resizable=yes');
+      });
+    }
+  }
+
   window.addEventListener('focus', () => {
     syncMemoFromStorage();
     renderNotes();
@@ -460,6 +472,11 @@
       renderNotes();
     }
     if (e.key === 'sticky-todos') renderTodos();
+    if (e.key === 'sticky-pinned') {
+      memoPickerOpen = false;
+      renderMemo();
+      renderNotes();
+    }
   });
 
   if ('serviceWorker' in navigator) {

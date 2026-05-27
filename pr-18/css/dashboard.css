@@ -99,7 +99,7 @@
 }
 
 .cal-table td.cal-today span {
-  background: #4a90d9;
+  background: #f96302;
   color: #fff;
   font-weight: 700;
 }
@@ -201,7 +201,7 @@
   transition: background .1s;
 }
 .note-picker-item:hover { background: rgba(0,0,0,.06); }
-.note-picker-item.current { background: rgba(74,144,217,.1); }
+.note-picker-item.current { background: rgba(249,99,2,.1); }
 
 .note-picker-swatch {
   width: 12px;
@@ -219,13 +219,13 @@
 }
 
 .note-picker-check {
-  color: #4a90d9;
+  color: #f96302;
   font-size: 13px;
   flex-shrink: 0;
 }
 
 .note-picker-new {
-  color: #4a90d9;
+  color: #f96302;
   font-weight: 600;
   margin-top: 4px;
   border-top: 1px solid rgba(0,0,0,.07);
@@ -251,8 +251,8 @@
   transition: border-color .15s, box-shadow .15s;
 }
 .todo-input:focus {
-  border-color: #4a90d9;
-  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+  border-color: #f96302;
+  box-shadow: 0 0 0 3px rgba(249,99,2,.15);
 }
 
 .todo-list {
@@ -277,7 +277,7 @@
 .todo-item input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #4a90d9;
+  accent-color: #f96302;
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -323,11 +323,11 @@
   border: none;
   cursor: pointer;
   font-size: 12px;
-  color: #4a90d9;
+  color: #f96302;
   padding: 2px 6px;
   border-radius: 4px;
 }
-.todo-clear-btn:hover { background: rgba(74,144,217,.1); }
+.todo-clear-btn:hover { background: rgba(249,99,2,.1); }
 
 /* ── Notes widget ── */
 .widget-notes-body {
