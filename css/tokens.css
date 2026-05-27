@@ -53,3 +53,12 @@
   --shadow-2: 0 2px 8px rgba(0,0,0,.5);
   --shadow-3: 0 4px 16px rgba(0,0,0,.6);
 }
+
+/* When dark mode + pastel note color: force dark text for legibility */
+[data-theme="dark"] [data-note-color] .card-preview,
+[data-theme="dark"] [data-note-color] .card-preview * { color: #333; }
+[data-theme="dark"] [data-note-color] .card-preview .empty { color: #777; }
+[data-theme="dark"] [data-note-color] .memo-textarea { color: #333; }
+[data-theme="dark"] [data-note-color] .list-title { color: #222; }
+[data-theme="dark"] [data-note-color] .list-preview,
+[data-theme="dark"] [data-note-color] .list-meta { color: #555; }

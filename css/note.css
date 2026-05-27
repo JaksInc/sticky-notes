@@ -344,6 +344,16 @@ textarea.edit-raw.visible { display: block; }
 #btn-import-save:hover { opacity: .85; }
 #btn-import-save:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
+/* Dark mode + pastel note background: force legible dark text */
+[data-theme="dark"] body[data-note-color] .text-line,
+[data-theme="dark"] body[data-note-color] .bullet-list li,
+[data-theme="dark"] body[data-note-color] .check-item span,
+[data-theme="dark"] body[data-note-color] .barcode-inline-label,
+[data-theme="dark"] body[data-note-color] .barcode-inline-num { color: #333; }
+[data-theme="dark"] body[data-note-color] .check-item.checked span { color: #888; }
+[data-theme="dark"] body[data-note-color] textarea.edit-raw { color: #333; }
+[data-theme="dark"] body[data-note-color] .view-render.hint::after { color: rgba(0,0,0,.4); }
+
 /* ── Mobile ── */
 @media (max-width: 767px) {
   .swatch { width: 28px; height: 28px; }

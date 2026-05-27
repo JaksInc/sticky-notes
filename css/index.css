@@ -250,15 +250,21 @@ body {
 /* Hide the browser's built-in clear button — we handle Escape */
 .search-input::-webkit-search-cancel-button { display: none; }
 
-/* ── Mobile ── */
+/* ── Mobile: icon-only toolbar ── */
+@media (max-width: 640px) {
+  .btn-label { display: none; }
+  .toolbar { gap: 4px; padding: 8px 10px; }
+  .toolbar h1 { font-size: 14px; white-space: nowrap; }
+  .toolbar .btn { padding: 8px; }
+  .search-input { flex: 1; max-width: none; min-width: 0; font-size: 16px; }
+}
+
 @media (max-width: 480px) {
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 8px;
   }
   .card { height: 130px; }
-  .btn { padding: 9px 16px; font-size: 14px; }
-  .search-input { max-width: 100%; font-size: 16px; /* prevent iOS auto-zoom */ }
 }
 
 /* ── Import by code modal ── */
