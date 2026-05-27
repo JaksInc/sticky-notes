@@ -93,6 +93,7 @@
 
     if (memoPickerOpen) {
       widget.style.background = '';
+      delete widget.dataset.noteColor;
 
       if (pinnedId) {
         header.appendChild(
@@ -109,6 +110,7 @@
 
     if (!pinnedId) {
       widget.style.background = '';
+      delete widget.dataset.noteColor;
 
       header.appendChild(
         mkBtn(icon('pin', 14) + ' Pin a note', '', 'btn-primary btn-sm', () => {
@@ -143,6 +145,7 @@
     }
 
     widget.style.background = note.color || '#FFF9C4';
+    widget.dataset.noteColor = '1';
 
     // Color swatches
     const swatchWrap = document.createElement('div');
@@ -270,6 +273,7 @@
 
     const widget = document.querySelector('.widget-memo');
     widget.style.background = note.color || '#FFF9C4';
+    widget.dataset.noteColor = '1';
     document.querySelectorAll('.memo-swatch').forEach(s => {
       s.classList.toggle('active', s.dataset.color === note.color);
     });
@@ -391,6 +395,7 @@
       const card = document.createElement('div');
       card.className = 'card';
       card.style.backgroundColor = note.color || '#FFF9C4';
+      card.dataset.noteColor = '1';
 
       const body = document.createElement('div');
       body.className = 'card-body';
