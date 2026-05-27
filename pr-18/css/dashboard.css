@@ -127,6 +127,8 @@
 .memo-swatch:hover { transform: scale(1.25); }
 .memo-swatch.active { border-color: rgba(0,0,0,.55); box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
 
+.memo-unpin-btn { color: #b00 !important; }
+
 .memo-body {
   padding: 0;
   display: flex;
@@ -148,6 +150,86 @@
   color: #333;
   background: transparent;
   border-radius: 0 0 10px 10px;
+}
+
+/* Empty / no note selected */
+.memo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  min-height: 200px;
+  color: #aaa;
+  font-size: 14px;
+}
+.memo-placeholder p { margin: 0; }
+
+/* Note picker */
+.note-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 220px;
+  padding: 2px 0;
+}
+
+.note-picker-empty {
+  color: #aaa;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px 0;
+  margin: 0;
+}
+
+.note-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: #333;
+  text-align: left;
+  transition: background .1s;
+}
+.note-picker-item:hover { background: rgba(0,0,0,.06); }
+.note-picker-item.current { background: rgba(74,144,217,.1); }
+
+.note-picker-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,.15);
+  flex-shrink: 0;
+}
+
+.note-picker-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-picker-check {
+  color: #4a90d9;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.note-picker-new {
+  color: #4a90d9;
+  font-weight: 600;
+  margin-top: 4px;
+  border-top: 1px solid rgba(0,0,0,.07);
+  padding-top: 10px;
 }
 
 /* ── To-Do ── */

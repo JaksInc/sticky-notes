@@ -7,6 +7,7 @@
   ];
 
   const openWindows = new Map();
+  let memoPickerOpen = false;
 
   function isMobile() {
     return window.innerWidth < 768 || 'ontouchstart' in window;
@@ -72,77 +73,204 @@
 
   // ── Pinned note (Quick Memo) ────────────────────────────────────────────
 
-  function getOrCreatePinnedNote() {
-    const id = localStorage.getItem(PINNED_KEY);
-    if (id) {
-      const note = getNote(id);
-      if (note) return note;
+  function mkBtn(text, title, cls, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + cls;
+    btn.textContent = text;
+    if (title) btn.title = title;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function renderMemo() {
+    const pinnedId = localStorage.getItem(PINNED_KEY);
+    const widget   = document.querySelector('.widget-memo');
+    const header   = document.getElementById('memo-header-actions');
+    const body     = document.getElementById('memo-body');
+
+    header.innerHTML = '';
+    body.innerHTML   = '';
+
+    if (memoPickerOpen) {
+      // ── Picker state ─────────────────────────────────────────────────
+      widget.style.background = '#fff';
+
+      if (pinnedId) {
+        header.appendChild(
+          mkBtn('↩ Cancel', 'Go back', 'btn-secondary btn-sm', () => {
+            memoPickerOpen = false;
+            renderMemo();
+          })
+        );
+      }
+
+      body.appendChild(buildNotePicker(pinnedId));
+      return;
     }
-    const note = createNote();
-    localStorage.setItem(PINNED_KEY, note.id);
-    return note;
-  }
 
-  function applyMemoColor(color) {
-    const widget = document.querySelector('.widget-memo');
-    widget.style.background = color;
-    document.querySelectorAll('.memo-swatch').forEach(s => {
-      s.classList.toggle('active', s.dataset.color === color);
-    });
-  }
+    if (!pinnedId) {
+      // ── Empty / no note selected ──────────────────────────────────────
+      widget.style.background = '#fff';
 
-  function initMemo() {
-    const note = getOrCreatePinnedNote();
+      header.appendChild(
+        mkBtn('Pin a note', '', 'btn-primary btn-sm', () => {
+          memoPickerOpen = true;
+          renderMemo();
+        })
+      );
 
-    // Build color swatches
-    const swatchContainer = document.getElementById('memo-swatches');
+      const placeholder = document.createElement('div');
+      placeholder.className = 'memo-placeholder';
+      placeholder.innerHTML =
+        '<p>No note pinned.</p>' +
+        '<button class="btn btn-primary">Pin a note</button>';
+      placeholder.querySelector('button').addEventListener('click', () => {
+        memoPickerOpen = true;
+        renderMemo();
+      });
+      body.appendChild(placeholder);
+      return;
+    }
+
+    // ── Note pinned, textarea ─────────────────────────────────────────
+    const note = getNote(pinnedId);
+    if (!note) {
+      localStorage.removeItem(PINNED_KEY);
+      renderMemo();
+      return;
+    }
+
+    widget.style.background = note.color || '#FFF9C4';
+
+    // Color swatches
+    const swatchWrap = document.createElement('div');
+    swatchWrap.className = 'memo-swatches';
     SWATCHES.forEach(color => {
       const btn = document.createElement('button');
-      btn.className = 'memo-swatch';
+      btn.className = 'memo-swatch' + (color === note.color ? ' active' : '');
       btn.dataset.color = color;
       btn.style.background = color;
       btn.title = color;
       btn.addEventListener('click', () => {
-        const n = getOrCreatePinnedNote();
+        const n = getNote(pinnedId);
+        if (!n) return;
         n.color = color;
         saveNote(n);
-        applyMemoColor(color);
+        renderMemo();
       });
-      swatchContainer.appendChild(btn);
+      swatchWrap.appendChild(btn);
     });
+    header.appendChild(swatchWrap);
 
-    applyMemoColor(note.color);
+    header.appendChild(mkBtn('↔ Swap', 'Pin a different note', 'btn-secondary btn-sm', () => {
+      memoPickerOpen = true;
+      renderMemo();
+    }));
 
-    const ta = document.getElementById('memo-text');
+    header.appendChild(mkBtn('✎ Open', 'Open in editor', 'btn-secondary btn-sm', () => {
+      openNote(pinnedId);
+    }));
+
+    header.appendChild(mkBtn('Unpin', 'Remove from memo widget', 'btn-secondary btn-sm memo-unpin-btn', () => {
+      localStorage.removeItem(PINNED_KEY);
+      memoPickerOpen = false;
+      renderMemo();
+      renderNotes();
+    }));
+
+    // Textarea
+    const ta = document.createElement('textarea');
+    ta.id = 'memo-text';
+    ta.className = 'memo-textarea';
+    ta.placeholder = 'Jot something down…';
     ta.value = note.content;
 
-    // Open in full editor
-    document.getElementById('memo-open-btn').addEventListener('click', () => {
-      openNote(getOrCreatePinnedNote().id);
-    });
-
-    // Auto-save on input
     let saveTimer;
     ta.addEventListener('input', () => {
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
-        const n = getOrCreatePinnedNote();
-        n.content = ta.value;
-        saveNote(n);
+        const n = getNote(pinnedId);
+        if (n) { n.content = ta.value; saveNote(n); }
       }, 300);
     });
+    body.appendChild(ta);
+  }
+
+  function buildNotePicker(currentPinnedId) {
+    const container = document.createElement('div');
+    container.className = 'note-picker';
+
+    const allNotes = getAllNotes();
+
+    if (allNotes.length === 0) {
+      const msg = document.createElement('p');
+      msg.className = 'note-picker-empty';
+      msg.textContent = 'No notes yet.';
+      container.appendChild(msg);
+    } else {
+      allNotes.forEach(note => {
+        const item = document.createElement('button');
+        item.className = 'note-picker-item' + (note.id === currentPinnedId ? ' current' : '');
+
+        const swatch = document.createElement('span');
+        swatch.className = 'note-picker-swatch';
+        swatch.style.background = note.color || '#FFF9C4';
+
+        const title = document.createElement('span');
+        title.className = 'note-picker-title';
+        title.textContent = note.content.split('\n')[0].trim() || 'Empty note';
+
+        item.appendChild(swatch);
+        item.appendChild(title);
+        if (note.id === currentPinnedId) {
+          const check = document.createElement('span');
+          check.className = 'note-picker-check';
+          check.textContent = '✓';
+          item.appendChild(check);
+        }
+        item.addEventListener('click', () => {
+          localStorage.setItem(PINNED_KEY, note.id);
+          memoPickerOpen = false;
+          renderMemo();
+          renderNotes();
+        });
+        container.appendChild(item);
+      });
+    }
+
+    // Create new note option
+    const newItem = document.createElement('button');
+    newItem.className = 'note-picker-item note-picker-new';
+    newItem.textContent = '+ New note';
+    newItem.addEventListener('click', () => {
+      const note = createNote();
+      localStorage.setItem(PINNED_KEY, note.id);
+      memoPickerOpen = false;
+      renderMemo();
+      renderNotes();
+      setTimeout(() => document.getElementById('memo-text')?.focus(), 50);
+    });
+    container.appendChild(newItem);
+
+    return container;
   }
 
   function syncMemoFromStorage() {
+    if (memoPickerOpen) return;
     const pinnedId = localStorage.getItem(PINNED_KEY);
     if (!pinnedId) return;
     const note = getNote(pinnedId);
-    if (!note) return;
+    if (!note) { localStorage.removeItem(PINNED_KEY); renderMemo(); return; }
+
     const ta = document.getElementById('memo-text');
-    if (ta !== document.activeElement) {
-      ta.value = note.content;
-      applyMemoColor(note.color);
-    }
+    if (!ta || ta === document.activeElement) return;
+    ta.value = note.content;
+
+    const widget = document.querySelector('.widget-memo');
+    widget.style.background = note.color || '#FFF9C4';
+    document.querySelectorAll('.memo-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.color === note.color);
+    });
   }
 
   // ── Todos ───────────────────────────────────────────────────────────────
@@ -317,7 +445,7 @@
   // ── Init ────────────────────────────────────────────────────────────────
 
   initCalendar();
-  initMemo();
+  renderMemo();
   initTodos();
   initNotes();
 
