@@ -1,4 +1,4 @@
-const CACHE = 'sticky-notes-v3';
+const CACHE = 'sticky-notes-__COMMIT__';
 
 const ASSETS = [
   './',
