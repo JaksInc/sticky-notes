@@ -12,16 +12,27 @@ body {
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  background: rgba(0,0,0,.08);
-  border-bottom: 1px solid rgba(0,0,0,.12);
+  background: #f96302;
+  border-bottom: 2px solid rgba(0,0,0,.12);
 }
 
 .toolbar h1 {
   margin: 0;
   font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: #fff;
   flex: 1;
+}
+
+.toolbar .btn-primary {
+  background: #fff;
+  color: #f96302;
+}
+
+.toolbar .btn-secondary {
+  background: rgba(255,255,255,.92);
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
 }
 
 .btn {
@@ -37,7 +48,7 @@ body {
 }
 .btn:hover { opacity: .85; }
 
-.btn-primary { background: #4a90d9; color: #fff; }
+.btn-primary { background: #f96302; color: #fff; }
 .btn-secondary { background: #fff; color: #333; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
 
 .grid-container { padding: 16px; }
@@ -208,8 +219,8 @@ body {
   transition: border-color .15s, box-shadow .15s;
 }
 .search-input:focus {
-  border-color: #4a90d9;
-  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+  border-color: #f96302;
+  box-shadow: 0 0 0 3px rgba(249,99,2,.15);
   background: #fff;
 }
 /* Hide the browser's built-in ✕ clear button — we handle Escape */
@@ -294,8 +305,8 @@ body {
   transition: border-color .15s, box-shadow .15s;
 }
 .code-chunk:focus {
-  border-color: #4a90d9;
-  box-shadow: 0 0 0 3px rgba(74,144,217,.18);
+  border-color: #f96302;
+  box-shadow: 0 0 0 3px rgba(249,99,2,.18);
 }
 
 .code-sep {
@@ -321,7 +332,7 @@ body {
   font-weight: 500;
 }
 
-#btn-import-go { background: #4a90d9; color: #fff; }
+#btn-import-go { background: #f96302; color: #fff; }
 #btn-import-go:hover { opacity: .88; }
 #btn-import-cancel { background: rgba(0,0,0,.08); color: #444; }
 #btn-import-cancel:hover { background: rgba(0,0,0,.14); }
