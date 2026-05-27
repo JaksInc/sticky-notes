@@ -1,9 +1,9 @@
-const CACHE = 'sticky-notes-77a8bc327f6015d10b34da769dc98f1e156d551c';
+const CACHE = 'sticky-notes-263f2ef7987ce858e7fd5f592f29f6b1fc8ae306';
 
 const ASSETS = [
   './',
   './index.html',
-  './dashboard.html',
+  './notes.html',
   './note.html',
   './manifest.json',
   './js/storage.js',

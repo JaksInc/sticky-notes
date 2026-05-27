@@ -1,6 +1,11 @@
 (function () {
   'use strict';
 
+  const PINNED_KEY = 'sticky-pinned';
+  const SWATCHES = [
+    '#FFF9C4', '#F8BBD0', '#BBDEFB', '#C8E6C9', '#FFE0B2', '#E1BEE7', '#FFFFFF'
+  ];
+
   const openWindows = new Map();
 
   function isMobile() {
@@ -65,19 +70,79 @@
     container.appendChild(table);
   }
 
-  // ── Quick Memo ──────────────────────────────────────────────────────────
+  // ── Pinned note (Quick Memo) ────────────────────────────────────────────
+
+  function getOrCreatePinnedNote() {
+    const id = localStorage.getItem(PINNED_KEY);
+    if (id) {
+      const note = getNote(id);
+      if (note) return note;
+    }
+    const note = createNote();
+    localStorage.setItem(PINNED_KEY, note.id);
+    return note;
+  }
+
+  function applyMemoColor(color) {
+    const widget = document.querySelector('.widget-memo');
+    widget.style.background = color;
+    document.querySelectorAll('.memo-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.color === color);
+    });
+  }
 
   function initMemo() {
-    const ta = document.getElementById('memo-text');
-    ta.value = localStorage.getItem('sticky-memo') || '';
+    const note = getOrCreatePinnedNote();
 
+    // Build color swatches
+    const swatchContainer = document.getElementById('memo-swatches');
+    SWATCHES.forEach(color => {
+      const btn = document.createElement('button');
+      btn.className = 'memo-swatch';
+      btn.dataset.color = color;
+      btn.style.background = color;
+      btn.title = color;
+      btn.addEventListener('click', () => {
+        const n = getOrCreatePinnedNote();
+        n.color = color;
+        saveNote(n);
+        applyMemoColor(color);
+      });
+      swatchContainer.appendChild(btn);
+    });
+
+    applyMemoColor(note.color);
+
+    const ta = document.getElementById('memo-text');
+    ta.value = note.content;
+
+    // Open in full editor
+    document.getElementById('memo-open-btn').addEventListener('click', () => {
+      openNote(getOrCreatePinnedNote().id);
+    });
+
+    // Auto-save on input
     let saveTimer;
     ta.addEventListener('input', () => {
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
-        localStorage.setItem('sticky-memo', ta.value);
+        const n = getOrCreatePinnedNote();
+        n.content = ta.value;
+        saveNote(n);
       }, 300);
     });
+  }
+
+  function syncMemoFromStorage() {
+    const pinnedId = localStorage.getItem(PINNED_KEY);
+    if (!pinnedId) return;
+    const note = getNote(pinnedId);
+    if (!note) return;
+    const ta = document.getElementById('memo-text');
+    if (ta !== document.activeElement) {
+      ta.value = note.content;
+      applyMemoColor(note.color);
+    }
   }
 
   // ── Todos ───────────────────────────────────────────────────────────────
@@ -180,7 +245,8 @@
   }
 
   function renderNotes() {
-    const notes = getAllNotes();
+    const pinnedId = localStorage.getItem(PINNED_KEY);
+    const notes = getAllNotes().filter(n => n.id !== pinnedId);
     const grid = document.getElementById('notes-grid');
     const empty = document.getElementById('notes-empty');
     grid.innerHTML = '';
@@ -255,15 +321,17 @@
   initTodos();
   initNotes();
 
-  window.addEventListener('focus', renderNotes);
+  window.addEventListener('focus', () => {
+    syncMemoFromStorage();
+    renderNotes();
+  });
 
   window.addEventListener('storage', e => {
-    if (e.key === 'sticky-notes') renderNotes();
-    if (e.key === 'sticky-todos') renderTodos();
-    if (e.key === 'sticky-memo') {
-      document.getElementById('memo-text').value =
-        localStorage.getItem('sticky-memo') || '';
+    if (e.key === 'sticky-notes') {
+      syncMemoFromStorage();
+      renderNotes();
     }
+    if (e.key === 'sticky-todos') renderTodos();
   });
 
   if ('serviceWorker' in navigator) {
