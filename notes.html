@@ -23,7 +23,7 @@
     <h1>All Notes</h1>
     <input type="search" id="search-input" class="search-input" placeholder="Search notes…" autocomplete="off">
     <button class="btn btn-primary" id="btn-new"></button>
-    <button class="btn btn-secondary" id="btn-import-code">Import by Code</button>
+    <button class="btn btn-secondary" id="btn-import-code" title="Import by Code"></button>
     <button class="btn btn-secondary" id="btn-export"></button>
     <button class="btn btn-secondary" id="btn-import-file"></button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
@@ -77,10 +77,10 @@
       const gridEl = document.getElementById('grid');
       if (view === 'list') {
         gridEl.className = 'list';
-        btn.innerHTML = icon('list', 14) + ' List';
+        btn.innerHTML = icon('list', 14) + '<span class="btn-label"> List</span>';
       } else {
         gridEl.className = 'grid';
-        btn.innerHTML = icon('grid', 14) + ' Grid';
+        btn.innerHTML = icon('grid', 14) + '<span class="btn-label"> Grid</span>';
       }
       renderGrid();
     }
@@ -167,6 +167,7 @@
           const card = document.createElement('div');
           card.className = 'card';
           card.style.backgroundColor = note.color || '#FFF9C4';
+          card.dataset.noteColor = '1';
 
           const body = document.createElement('div');
           body.className = 'card-body';
@@ -356,11 +357,16 @@
     });
 
     // Set toolbar button labels with icons
-    document.getElementById('btn-back-dashboard').innerHTML = icon('back', 14) + ' Dashboard';
-    document.getElementById('btn-new').innerHTML = icon('plus', 14) + ' New Note';
-    document.getElementById('btn-export').innerHTML = icon('download', 14) + ' Export';
-    document.getElementById('btn-import-file').innerHTML = icon('upload', 14) + ' Import';
-    document.getElementById('btn-popup').innerHTML = icon('popout', 14) + ' Pop Out';
+    document.getElementById('btn-back-dashboard').title = 'Back to Dashboard';
+    document.getElementById('btn-back-dashboard').innerHTML = icon('back', 14) + '<span class="btn-label"> Dashboard</span>';
+    document.getElementById('btn-new').title = 'New Note';
+    document.getElementById('btn-new').innerHTML = icon('plus', 14) + '<span class="btn-label"> New Note</span>';
+    document.getElementById('btn-import-code').innerHTML = icon('hash', 14) + '<span class="btn-label"> Import by Code</span>';
+    document.getElementById('btn-export').title = 'Export notes';
+    document.getElementById('btn-export').innerHTML = icon('download', 14) + '<span class="btn-label"> Export</span>';
+    document.getElementById('btn-import-file').title = 'Import notes from file';
+    document.getElementById('btn-import-file').innerHTML = icon('upload', 14) + '<span class="btn-label"> Import</span>';
+    document.getElementById('btn-popup').innerHTML = icon('popout', 14) + '<span class="btn-label"> Pop Out</span>';
 
     setView(currentView);
 

@@ -83,6 +83,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
     function applyColor(color) {
       document.body.style.backgroundColor = color;
+      document.body.dataset.noteColor = '1';
       document.getElementById('edit-raw').style.backgroundColor = hexToRgba(color, 0.3);
       document.querySelectorAll('.swatch').forEach(s => {
         s.classList.toggle('active', s.dataset.color === color);
