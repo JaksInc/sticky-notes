@@ -1,3 +1,5 @@
+body { overflow-x: hidden; }
+
 /* ── Widget grid ── */
 .widget-grid {
   display: grid;
@@ -30,6 +32,8 @@
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .widget-title {
