@@ -147,25 +147,53 @@
     widget.style.background = note.color || '#FFF9C4';
     widget.dataset.noteColor = '1';
 
-    // Color swatches
-    const swatchWrap = document.createElement('div');
-    swatchWrap.className = 'memo-swatches';
-    SWATCHES.forEach(color => {
-      const btn = document.createElement('button');
-      btn.className = 'memo-swatch' + (color === note.color ? ' active' : '');
-      btn.dataset.color = color;
-      btn.style.background = color;
-      btn.title = color;
-      btn.addEventListener('click', () => {
-        const n = getNote(pinnedId);
-        if (!n) return;
-        n.color = color;
-        saveNote(n);
-        renderMemo();
+    // Color picker button
+    const colorBtn = document.createElement('button');
+    colorBtn.className = 'btn btn-secondary btn-sm memo-color-btn';
+    colorBtn.title = 'Change note color';
+    const colorDot = document.createElement('span');
+    colorDot.className = 'memo-color-dot';
+    colorDot.style.background = note.color || '#FFF9C4';
+    colorBtn.appendChild(colorDot);
+    colorBtn.insertAdjacentHTML('beforeend', icon('palette', 14));
+
+    colorBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const existing = colorBtn.querySelector('.memo-color-picker');
+      if (existing) { existing.remove(); return; }
+
+      const picker = document.createElement('div');
+      picker.className = 'memo-color-picker';
+
+      SWATCHES.forEach(color => {
+        const sw = document.createElement('button');
+        sw.className = 'memo-swatch' + (color === (note.color || '#FFF9C4') ? ' active' : '');
+        sw.dataset.color = color;
+        sw.style.background = color;
+        sw.title = color;
+        sw.addEventListener('click', ev => {
+          ev.stopPropagation();
+          const n = getNote(pinnedId);
+          if (!n) return;
+          n.color = color;
+          saveNote(n);
+          renderMemo();
+        });
+        picker.appendChild(sw);
       });
-      swatchWrap.appendChild(btn);
+
+      colorBtn.appendChild(picker);
+
+      const closeOnOutside = ev => {
+        if (!colorBtn.contains(ev.target)) {
+          picker.remove();
+          document.removeEventListener('click', closeOnOutside);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeOnOutside), 0);
     });
-    header.appendChild(swatchWrap);
+
+    header.appendChild(colorBtn);
 
     header.appendChild(mkBtn(icon('swap', 14) + ' Swap', 'Pin a different note', 'btn-secondary btn-sm', () => {
       memoPickerOpen = true;
@@ -274,9 +302,8 @@
     const widget = document.querySelector('.widget-memo');
     widget.style.background = note.color || '#FFF9C4';
     widget.dataset.noteColor = '1';
-    document.querySelectorAll('.memo-swatch').forEach(s => {
-      s.classList.toggle('active', s.dataset.color === note.color);
-    });
+    const dot = document.querySelector('.memo-color-dot');
+    if (dot) dot.style.background = note.color || '#FFF9C4';
   }
 
   // ── Todos ───────────────────────────────────────────────────────────────
