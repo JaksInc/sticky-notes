@@ -5,9 +5,13 @@
   const SWATCHES = [
     '#FFF9C4', '#F8BBD0', '#BBDEFB', '#C8E6C9', '#FFE0B2', '#E1BEE7', '#FFFFFF'
   ];
+  const TODO_PAGE_SIZE = 5;
 
   const openWindows = new Map();
   let memoPickerOpen = false;
+  let memoIsEditing = false;
+  let todoPage = 0;
+  let calSelectedCell = null;
 
   function isMobile() {
     return window.innerWidth < 768 || 'ontouchstart' in window;
@@ -63,6 +67,19 @@
       span.textContent = day;
       cell.appendChild(span);
       if (day === today) cell.className = 'cal-today';
+      cell.classList.add('cal-day');
+      cell.addEventListener('click', () => {
+        if (calSelectedCell && calSelectedCell !== cell) {
+          calSelectedCell.classList.remove('cal-selected');
+        }
+        if (calSelectedCell === cell) {
+          cell.classList.remove('cal-selected');
+          calSelectedCell = null;
+        } else {
+          cell.classList.add('cal-selected');
+          calSelectedCell = cell;
+        }
+      });
       col++;
     }
 
@@ -80,6 +97,87 @@
     if (title) btn.title = title;
     btn.addEventListener('click', onClick);
     return btn;
+  }
+
+  function buildMemoColorBtn(note, pinnedId) {
+    const colorBtn = document.createElement('button');
+    colorBtn.className = 'btn btn-secondary btn-sm memo-color-btn';
+    colorBtn.title = 'Change note color';
+    const colorDot = document.createElement('span');
+    colorDot.className = 'memo-color-dot';
+    colorDot.style.background = note.color || '#FFF9C4';
+    colorBtn.appendChild(colorDot);
+    colorBtn.insertAdjacentHTML('beforeend', icon('palette', 14));
+
+    colorBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const existing = colorBtn.querySelector('.memo-color-picker');
+      if (existing) { existing.remove(); return; }
+
+      const picker = document.createElement('div');
+      picker.className = 'memo-color-picker';
+
+      SWATCHES.forEach(color => {
+        const sw = document.createElement('button');
+        sw.className = 'memo-swatch' + (color === (note.color || '#FFF9C4') ? ' active' : '');
+        sw.dataset.color = color;
+        sw.style.background = color;
+        sw.title = color;
+        sw.addEventListener('click', ev => {
+          ev.stopPropagation();
+          const n = getNote(pinnedId);
+          if (!n) return;
+          n.color = color;
+          saveNote(n);
+          renderMemo();
+        });
+        picker.appendChild(sw);
+      });
+
+      colorBtn.appendChild(picker);
+
+      const closeOnOutside = ev => {
+        if (!colorBtn.contains(ev.target)) {
+          picker.remove();
+          document.removeEventListener('click', closeOnOutside);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeOnOutside), 0);
+    });
+
+    return colorBtn;
+  }
+
+  function attachMemoCheckHandlers(viewEl, note, pinnedId) {
+    viewEl.querySelectorAll('.check-item input').forEach(cb => {
+      cb.addEventListener('click', e => {
+        e.stopPropagation();
+        const lineIdx = parseInt(cb.closest('.check-item').dataset.line);
+        const lines = note.content.split('\n');
+        if (/^\[ \]/i.test(lines[lineIdx])) {
+          lines[lineIdx] = lines[lineIdx].replace(/^\[ \]/i, '[x]');
+        } else {
+          lines[lineIdx] = lines[lineIdx].replace(/^\[x\]/i, '[ ]');
+        }
+        note.content = lines.join('\n');
+        saveNote(note);
+        renderMemoView(viewEl, note, pinnedId);
+      });
+    });
+  }
+
+  function renderMemoView(viewEl, note, pinnedId) {
+    viewEl.innerHTML = '';
+    const frag = renderContent(note.content);
+    if (!frag.childNodes.length) {
+      const hint = document.createElement('span');
+      hint.className = 'memo-view-hint';
+      hint.textContent = 'Click to edit…';
+      viewEl.appendChild(hint);
+    } else {
+      viewEl.appendChild(frag);
+      attachMemoCheckHandlers(viewEl, note, pinnedId);
+    }
   }
 
   function renderMemo() {
@@ -136,7 +234,6 @@
       return;
     }
 
-    // ── Note pinned, textarea ─────────────────────────────────────────
     const note = getNote(pinnedId);
     if (!note) {
       localStorage.removeItem(PINNED_KEY);
@@ -147,53 +244,19 @@
     widget.style.background = note.color || '#FFF9C4';
     widget.dataset.noteColor = '1';
 
-    // Color picker button
-    const colorBtn = document.createElement('button');
-    colorBtn.className = 'btn btn-secondary btn-sm memo-color-btn';
-    colorBtn.title = 'Change note color';
-    const colorDot = document.createElement('span');
-    colorDot.className = 'memo-color-dot';
-    colorDot.style.background = note.color || '#FFF9C4';
-    colorBtn.appendChild(colorDot);
-    colorBtn.insertAdjacentHTML('beforeend', icon('palette', 14));
+    header.appendChild(buildMemoColorBtn(note, pinnedId));
 
-    colorBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const existing = colorBtn.querySelector('.memo-color-picker');
-      if (existing) { existing.remove(); return; }
-
-      const picker = document.createElement('div');
-      picker.className = 'memo-color-picker';
-
-      SWATCHES.forEach(color => {
-        const sw = document.createElement('button');
-        sw.className = 'memo-swatch' + (color === (note.color || '#FFF9C4') ? ' active' : '');
-        sw.dataset.color = color;
-        sw.style.background = color;
-        sw.title = color;
-        sw.addEventListener('click', ev => {
-          ev.stopPropagation();
-          const n = getNote(pinnedId);
-          if (!n) return;
-          n.color = color;
-          saveNote(n);
-          renderMemo();
-        });
-        picker.appendChild(sw);
-      });
-
-      colorBtn.appendChild(picker);
-
-      const closeOnOutside = ev => {
-        if (!colorBtn.contains(ev.target)) {
-          picker.remove();
-          document.removeEventListener('click', closeOnOutside);
-        }
-      };
-      setTimeout(() => document.addEventListener('click', closeOnOutside), 0);
-    });
-
-    header.appendChild(colorBtn);
+    if (memoIsEditing) {
+      header.appendChild(mkBtn(icon('check', 14) + ' Save', 'Save and view', 'btn-secondary btn-sm', () => {
+        memoIsEditing = false;
+        renderMemo();
+      }));
+    } else {
+      header.appendChild(mkBtn(icon('pencil', 14) + ' Edit', 'Edit this note', 'btn-secondary btn-sm', () => {
+        memoIsEditing = true;
+        renderMemo();
+      }));
+    }
 
     header.appendChild(mkBtn(icon('swap', 14) + ' Swap', 'Pin a different note', 'btn-secondary btn-sm', () => {
       memoPickerOpen = true;
@@ -207,26 +270,54 @@
     header.appendChild(mkBtn('Unpin', 'Remove from memo widget', 'btn-secondary btn-sm memo-unpin-btn', () => {
       localStorage.removeItem(PINNED_KEY);
       memoPickerOpen = false;
+      memoIsEditing = false;
       renderMemo();
       renderNotes();
     }));
 
-    // Textarea
-    const ta = document.createElement('textarea');
-    ta.id = 'memo-text';
-    ta.className = 'memo-textarea';
-    ta.placeholder = 'Jot something down…';
-    ta.value = note.content;
+    if (memoIsEditing) {
+      const ta = document.createElement('textarea');
+      ta.id = 'memo-text';
+      ta.className = 'memo-textarea';
+      ta.placeholder = 'Jot something down…';
+      ta.value = note.content;
 
-    let saveTimer;
-    ta.addEventListener('input', () => {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
+      let saveTimer;
+      ta.addEventListener('input', () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          const n = getNote(pinnedId);
+          if (n) { n.content = ta.value; saveNote(n); }
+        }, 300);
+      });
+      ta.addEventListener('blur', () => {
         const n = getNote(pinnedId);
         if (n) { n.content = ta.value; saveNote(n); }
-      }, 300);
-    });
-    body.appendChild(ta);
+        memoIsEditing = false;
+        renderMemo();
+      });
+      ta.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          const n = getNote(pinnedId);
+          if (n) { n.content = ta.value; saveNote(n); }
+          memoIsEditing = false;
+          renderMemo();
+        }
+      });
+      body.appendChild(ta);
+      setTimeout(() => ta.focus(), 0);
+    } else {
+      const viewEl = document.createElement('div');
+      viewEl.className = 'memo-view';
+      viewEl.tabIndex = 0;
+      renderMemoView(viewEl, note, pinnedId);
+
+      viewEl.addEventListener('click', () => { memoIsEditing = true; renderMemo(); });
+      viewEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { memoIsEditing = true; renderMemo(); }
+      });
+      body.appendChild(viewEl);
+    }
   }
 
   function buildNotePicker(currentPinnedId) {
@@ -264,6 +355,7 @@
         item.addEventListener('click', () => {
           localStorage.setItem(PINNED_KEY, note.id);
           memoPickerOpen = false;
+          memoIsEditing = false;
           renderMemo();
           renderNotes();
         });
@@ -271,7 +363,6 @@
       });
     }
 
-    // Create new note option
     const newItem = document.createElement('button');
     newItem.className = 'note-picker-item note-picker-new';
     newItem.innerHTML = icon('plus', 14) + ' New note';
@@ -279,6 +370,7 @@
       const note = createNote();
       localStorage.setItem(PINNED_KEY, note.id);
       memoPickerOpen = false;
+      memoIsEditing = true;
       renderMemo();
       renderNotes();
       setTimeout(() => document.getElementById('memo-text')?.focus(), 50);
@@ -289,21 +381,20 @@
   }
 
   function syncMemoFromStorage() {
-    if (memoPickerOpen) return;
+    if (memoPickerOpen || memoIsEditing) return;
     const pinnedId = localStorage.getItem(PINNED_KEY);
     if (!pinnedId) return;
     const note = getNote(pinnedId);
     if (!note) { localStorage.removeItem(PINNED_KEY); renderMemo(); return; }
-
-    const ta = document.getElementById('memo-text');
-    if (!ta || ta === document.activeElement) return;
-    ta.value = note.content;
 
     const widget = document.querySelector('.widget-memo');
     widget.style.background = note.color || '#FFF9C4';
     widget.dataset.noteColor = '1';
     const dot = document.querySelector('.memo-color-dot');
     if (dot) dot.style.background = note.color || '#FFF9C4';
+
+    const viewEl = document.querySelector('.memo-view');
+    if (viewEl) renderMemoView(viewEl, note, pinnedId);
   }
 
   // ── Todos ───────────────────────────────────────────────────────────────
@@ -319,10 +410,15 @@
 
   function renderTodos() {
     const todos = loadTodos();
+    const totalPages = Math.max(1, Math.ceil(todos.length / TODO_PAGE_SIZE));
+    if (todoPage >= totalPages) todoPage = totalPages - 1;
+
+    const slice = todos.slice(todoPage * TODO_PAGE_SIZE, (todoPage + 1) * TODO_PAGE_SIZE);
     const list = document.getElementById('todo-list');
     list.innerHTML = '';
 
-    todos.forEach((todo, idx) => {
+    slice.forEach((todo, sliceIdx) => {
+      const idx = todoPage * TODO_PAGE_SIZE + sliceIdx;
       const li = document.createElement('li');
       li.className = 'todo-item' + (todo.done ? ' done' : '');
 
@@ -362,6 +458,15 @@
     const countEl = document.getElementById('todo-count');
     countEl.textContent = remaining + ' remaining';
     footer.style.display = todos.length ? '' : 'none';
+
+    const pag = document.getElementById('todo-pagination');
+    const pageInfo = document.getElementById('todo-page-info');
+    const prevBtn = document.getElementById('todo-prev');
+    const nextBtn = document.getElementById('todo-next');
+    pag.style.display = todos.length > TODO_PAGE_SIZE ? '' : 'none';
+    pageInfo.textContent = (todoPage + 1) + ' / ' + totalPages;
+    prevBtn.disabled = todoPage === 0;
+    nextBtn.disabled = todoPage >= totalPages - 1;
   }
 
   function initTodos() {
@@ -376,6 +481,8 @@
       todos.push({ id: crypto.randomUUID(), text, done: false, created: Date.now() });
       saveTodos(todos);
       input.value = '';
+      // jump to last page so new item is visible
+      todoPage = Math.max(0, Math.ceil(todos.length / TODO_PAGE_SIZE) - 1);
       renderTodos();
     }
 
@@ -384,8 +491,12 @@
 
     document.getElementById('todo-clear-btn').addEventListener('click', () => {
       saveTodos(loadTodos().filter(t => !t.done));
+      todoPage = 0;
       renderTodos();
     });
+
+    document.getElementById('todo-prev').addEventListener('click', () => { todoPage--; renderTodos(); });
+    document.getElementById('todo-next').addEventListener('click', () => { todoPage++; renderTodos(); });
   }
 
   // ── Notes mini-grid ─────────────────────────────────────────────────────
@@ -407,7 +518,7 @@
 
   function renderNotes() {
     const pinnedId = localStorage.getItem(PINNED_KEY);
-    const notes = getAllNotes().filter(n => n.id !== pinnedId);
+    const notes = getAllNotes().filter(n => n.id !== pinnedId).slice(0, 6);
     const grid = document.getElementById('notes-grid');
     const empty = document.getElementById('notes-empty');
     grid.innerHTML = '';
@@ -483,7 +594,6 @@
   initTodos();
   initNotes();
 
-  // Pop-out button
   const popoutBtn = document.getElementById('btn-popout');
   if (popoutBtn) {
     if (window.opener !== null || isMobile()) {
@@ -508,6 +618,7 @@
     if (e.key === 'sticky-todos') renderTodos();
     if (e.key === 'sticky-pinned') {
       memoPickerOpen = false;
+      memoIsEditing = false;
       renderMemo();
       renderNotes();
     }
