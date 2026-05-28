@@ -22,7 +22,6 @@
 <body>
   <div class="color-bar" id="color-bar">
     <a class="back-btn" id="btn-back" href="notes.html" style="display:none"></a>
-    <span class="color-bar-label">Color:</span>
     <button class="pin-btn" id="btn-pin" style="display:none">Pin</button>
     <button class="share-btn" id="btn-share" style="display:none"></button>
     <button class="btn-secondary save-btn" id="btn-save" style="display:none">Save</button>
@@ -85,9 +84,8 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       document.body.style.backgroundColor = color;
       document.body.dataset.noteColor = '1';
       document.getElementById('edit-raw').style.backgroundColor = hexToRgba(color, 0.3);
-      document.querySelectorAll('.swatch').forEach(s => {
-        s.classList.toggle('active', s.dataset.color === color);
-      });
+      const dot = document.querySelector('#btn-color-picker .memo-color-dot');
+      if (dot) dot.style.background = color;
     }
 
     function hexToRgba(hex, alpha) {
@@ -97,18 +95,54 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       return `rgba(${r},${g},${b},${alpha})`;
     }
 
-    function buildSwatches() {
+    function buildColorPicker() {
       const bar = document.getElementById('color-bar');
       const saveBtn = document.getElementById('btn-save');
-      for (const sw of SWATCHES) {
-        const btn = document.createElement('button');
-        btn.className = 'swatch';
-        btn.style.backgroundColor = sw.color;
-        btn.title = sw.name;
-        btn.dataset.color = sw.color;
-        btn.addEventListener('click', () => handleColorChange(sw.color));
-        bar.insertBefore(btn, saveBtn);
-      }
+
+      const btn = document.createElement('button');
+      btn.className = 'pin-btn memo-color-btn';
+      btn.id = 'btn-color-picker';
+      btn.title = 'Change note color';
+
+      const dot = document.createElement('span');
+      dot.className = 'memo-color-dot';
+      dot.style.background = note.color || '#FFF9C4';
+      btn.appendChild(dot);
+      btn.insertAdjacentHTML('beforeend', icon('palette', 14));
+
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const existing = btn.querySelector('.memo-color-picker');
+        if (existing) { existing.remove(); return; }
+
+        const picker = document.createElement('div');
+        picker.className = 'memo-color-picker';
+
+        SWATCHES.forEach(sw => {
+          const s = document.createElement('button');
+          s.className = 'memo-swatch' + (sw.color === note.color ? ' active' : '');
+          s.dataset.color = sw.color;
+          s.style.background = sw.color;
+          s.title = sw.name;
+          s.addEventListener('click', ev => {
+            ev.stopPropagation();
+            handleColorChange(sw.color);
+            dot.style.background = sw.color;
+            picker.querySelectorAll('.memo-swatch').forEach(x => x.classList.toggle('active', x.dataset.color === sw.color));
+            picker.remove();
+          });
+          picker.appendChild(s);
+        });
+
+        btn.appendChild(picker);
+        setTimeout(() => {
+          document.addEventListener('click', function close(ev) {
+            if (!btn.contains(ev.target)) { picker.remove(); document.removeEventListener('click', close); }
+          });
+        }, 0);
+      });
+
+      bar.insertBefore(btn, saveBtn);
     }
 
     function handleColorChange(color) {
@@ -374,7 +408,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       note = getNote(id);
       if (!note) { document.title = 'Not Found'; document.body.textContent = 'Note not found.'; return; }
 
-      buildSwatches();
+      buildColorPicker();
       applyColor(note.color || '#FFF9C4');
       updateTitle();
       updateStatus();
