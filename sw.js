@@ -10,6 +10,7 @@ const ASSETS = [
   './js/barcode.js',
   './js/render.js',
   './js/dashboard.js',
+  './js/layout.js',
   './js/icons.js',
   './css/tokens.css',
   './css/index.css',
