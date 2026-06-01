@@ -6,20 +6,27 @@
   const GRID_ROW_PX = 80;
   const GRID_GAP_PX = 16;
 
+  const WIDGET_META = {
+    calendar: { name: 'Calendar',    iconName: 'calendar'  },
+    memo:     { name: 'Pinned Note', iconName: 'bookmark'  },
+    todos:    { name: 'To-Do',       iconName: 'checklist' },
+    notes:    { name: 'Notes',       iconName: 'document'  },
+    links:    { name: 'Quick Links', iconName: 'link'      },
+  };
+
   const DEFAULT_LAYOUT = [
-    { id: 'calendar', x: 0, y: 0, w: 1, h: 4 },
-    { id: 'memo',     x: 1, y: 0, w: 1, h: 4 },
-    { id: 'todos',    x: 2, y: 0, w: 1, h: 4 },
-    { id: 'notes',    x: 0, y: 4, w: 3, h: 4 },
-    { id: 'links',    x: 0, y: 8, w: 2, h: 3 },
+    { id: 'calendar', x: 0, y: 0, w: 1, h: 4, hidden: false },
+    { id: 'memo',     x: 1, y: 0, w: 1, h: 4, hidden: false },
+    { id: 'todos',    x: 2, y: 0, w: 1, h: 4, hidden: false },
+    { id: 'notes',    x: 0, y: 4, w: 3, h: 4, hidden: false },
+    { id: 'links',    x: 0, y: 8, w: 2, h: 3, hidden: false },
   ];
 
   let editMode   = false;
   let dragEntry  = null;
   let _listeners = [];
 
-  // ── Resize corner state ────────────────────────────────────────────────
-  let resizeState = null; // { entry, widget, startX, startY, startW, startH }
+  let resizeState = null;
 
   // ── Storage ────────────────────────────────────────────────────────────
 
@@ -41,6 +48,7 @@
         Number.isInteger(e.w) && e.w >= 1 && e.w <= GRID_COLS &&
         Number.isInteger(e.h) && e.h >= 1 && e.h <= 20
       )) return defaultLayout();
+      parsed.forEach(e => { if (typeof e.hidden !== 'boolean') e.hidden = false; });
       return parsed;
     } catch { return defaultLayout(); }
   }
@@ -59,6 +67,15 @@
     layout.forEach(entry => {
       const widget = document.querySelector('[data-widget-id="' + entry.id + '"]');
       if (!widget) return;
+
+      if (entry.hidden && !editMode) {
+        widget.style.display = 'none';
+        widget.classList.remove('layout-hidden');
+        return;
+      }
+      widget.style.display = '';
+      widget.classList.toggle('layout-hidden', !!(entry.hidden && editMode));
+
       if (mobile) {
         widget.style.gridColumn = '';
         widget.style.gridRow    = '';
@@ -127,10 +144,10 @@
       return btn;
     }
 
-    const wMinus = makeBtn('−W', 'Narrower', () => entry.w <= 1, () => { entry.w = Math.max(1, entry.w - 1); saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
+    const wMinus = makeBtn('−W', 'Narrower', () => entry.w <= 1,      () => { entry.w = Math.max(1, entry.w - 1); saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
     const wPlus  = makeBtn('+W', 'Wider',    () => entry.w >= maxCols, () => { entry.w = Math.min(maxCols, entry.w + 1); entry.x = Math.min(entry.x, maxCols - entry.w); saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
-    const hMinus = makeBtn('−H', 'Shorter',  () => entry.h <= 1, () => { entry.h = Math.max(1, entry.h - 1); saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
-    const hPlus  = makeBtn('+H', 'Taller',   () => false, () => { entry.h = entry.h + 1; saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
+    const hMinus = makeBtn('−H', 'Shorter',  () => entry.h <= 1,      () => { entry.h = Math.max(1, entry.h - 1); saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
+    const hPlus  = makeBtn('+H', 'Taller',   () => false,             () => { entry.h += 1; saveLayout(loadLayoutCurrent()); applyLayout(loadLayoutCurrent()); });
 
     wrap.appendChild(wMinus);
     wrap.appendChild(wPlus);
@@ -140,7 +157,6 @@
     return wrap;
   }
 
-  // Shared mutable layout during edit — lets resize buttons mutate in place
   let _currentLayout = null;
   function loadLayoutCurrent() { return _currentLayout || (_currentLayout = loadLayout()); }
 
@@ -151,12 +167,31 @@
       const id = wrap.dataset.resizeControls;
       const entry = layout.find(e => e.id === id);
       if (!entry) return;
-      const [wm, wp, hm, hp] = wrap.querySelectorAll('.layout-resize-btn');
+      const [wm, wp, hm] = wrap.querySelectorAll('.layout-resize-btn');
       wm.disabled = entry.w <= 1;
       wp.disabled = entry.w >= maxCols;
       hm.disabled = entry.h <= 1;
-      hp.disabled = false;
     });
+  }
+
+  // ── Eye (visibility) button ────────────────────────────────────────────
+
+  function buildEyeBtn(entry) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'layout-eye-btn';
+    btn.title = entry.hidden ? 'Show widget' : 'Hide widget';
+    btn.innerHTML = icon(entry.hidden ? 'eye-off' : 'eye', 14);
+    btn.dataset.eyeBtn = entry.id;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      entry.hidden = !entry.hidden;
+      btn.title = entry.hidden ? 'Show widget' : 'Hide widget';
+      btn.innerHTML = icon(entry.hidden ? 'eye-off' : 'eye', 14);
+      saveLayout(loadLayoutCurrent());
+      applyLayout(loadLayoutCurrent());
+    });
+    return btn;
   }
 
   // ── Resize corner (drag-to-resize) ────────────────────────────────────
@@ -169,7 +204,6 @@
     corner.addEventListener('mousedown', e => {
       e.preventDefault();
       e.stopPropagation();
-      const rect = widget.getBoundingClientRect();
       const maxCols = window.innerWidth <= 900 ? 2 : GRID_COLS;
       resizeState = {
         entry, widget, maxCols,
@@ -193,7 +227,6 @@
     const newW = Math.max(1, Math.min(maxCols - entry.x, startW + Math.round(dx / colW)));
     const newH = Math.max(1, startH + Math.round(dy / rowH));
 
-    // Live preview via inline style
     widget.style.gridColumn = (entry.x + 1) + ' / span ' + newW;
     widget.style.gridRow    = (entry.y + 1) + ' / span ' + newH;
     resizeState._pendingW = newW;
@@ -263,10 +296,9 @@
     if (!grid.contains(e.relatedTarget)) hideGhost();
   }
 
-  // ── Edit mode ──────────────────────────────────────────────────────────
+  // ── Desktop Edit mode ──────────────────────────────────────────────────
 
   function enterEditMode() {
-    if (isMobile()) return;
     editMode = true;
     _currentLayout = loadLayout();
 
@@ -276,7 +308,6 @@
     const editBtn = document.getElementById('btn-edit-layout');
     if (editBtn) editBtn.classList.add('active');
 
-    // Add ghost element once
     if (!ghost) {
       ghost = document.createElement('div');
       ghost.className = 'layout-ghost';
@@ -291,20 +322,23 @@
 
       const header = widget.querySelector('.widget-header');
 
-      // Drag handle
       const handle = document.createElement('span');
       handle.className = 'layout-drag-handle';
       handle.innerHTML = icon('grip', 14);
       handle.title = 'Drag to move';
       header.prepend(handle);
 
-      // Resize controls in header
-      header.appendChild(buildResizeControls(entry));
+      const actions = header.querySelector('.widget-header-actions');
+      const eyeBtn = buildEyeBtn(entry);
+      if (actions) {
+        actions.prepend(eyeBtn);
+      } else {
+        header.appendChild(eyeBtn);
+      }
 
-      // Resize corner
+      header.appendChild(buildResizeControls(entry));
       widget.appendChild(buildResizeCorner(entry, widget));
 
-      // Drag handlers
       widget.setAttribute('draggable', 'true');
       const h = makeDragHandlers(widget);
       Object.entries(h).forEach(([evt, fn]) => {
@@ -313,7 +347,6 @@
       });
     });
 
-    // Grid-level drop handlers
     const grid2 = document.querySelector('.widget-grid');
     const gridHandlers = {
       dragover:  onGridDragover,
@@ -325,15 +358,14 @@
       _listeners.push({ el: grid2, evt, fn });
     });
 
-    // Resize mouse handlers on document
     document.addEventListener('mousemove', onResizeMouseMove);
     document.addEventListener('mouseup',   onResizeMouseUp);
     _listeners.push({ el: document, evt: 'mousemove', fn: onResizeMouseMove });
     _listeners.push({ el: document, evt: 'mouseup',   fn: onResizeMouseUp });
 
     updateAllResizeBtns();
+    applyLayout(_currentLayout);
 
-    // Inject reset button into toolbar
     const resetBtn = document.createElement('button');
     resetBtn.id = 'btn-reset-layout';
     resetBtn.className = 'btn btn-secondary';
@@ -345,6 +377,13 @@
       _currentLayout = defaultLayout();
       applyLayout(_currentLayout);
       updateAllResizeBtns();
+      document.querySelectorAll('[data-eye-btn]').forEach(btn => {
+        const id = btn.dataset.eyeBtn;
+        const entry = _currentLayout.find(e => e.id === id);
+        if (!entry) return;
+        btn.title = 'Hide widget';
+        btn.innerHTML = icon('eye', 14);
+      });
     });
     const popoutBtn = document.getElementById('btn-popout');
     popoutBtn.parentNode.insertBefore(resetBtn, popoutBtn);
@@ -360,30 +399,161 @@
     const editBtn = document.getElementById('btn-edit-layout');
     if (editBtn) editBtn.classList.remove('active');
 
-    // Remove injected elements
-    document.querySelectorAll('.layout-drag-handle, .layout-resize-controls, .layout-resize-corner').forEach(el => el.remove());
+    document.querySelectorAll('.layout-drag-handle, .layout-resize-controls, .layout-resize-corner, .layout-eye-btn').forEach(el => el.remove());
 
-    // Remove draggable attribute
-    document.querySelectorAll('[data-widget-id]').forEach(w => w.removeAttribute('draggable'));
+    document.querySelectorAll('[data-widget-id]').forEach(w => {
+      w.removeAttribute('draggable');
+      w.classList.remove('layout-hidden');
+    });
 
-    // Remove all event listeners
     _listeners.forEach(({ el, evt, fn }) => el.removeEventListener(evt, fn));
     _listeners = [];
 
-    // Remove ghost
     if (ghost) { ghost.remove(); ghost = null; }
-
-    // Remove reset button
     document.getElementById('btn-reset-layout')?.remove();
 
     resizeState = null;
+    applyLayout(loadLayout());
+  }
+
+  // ── Mobile Panel ───────────────────────────────────────────────────────
+
+  let _mobileLayout = null;
+  let _mobilePanel  = null;
+
+  function showMobilePanel() {
+    _mobileLayout = loadLayout().map(e => Object.assign({}, e));
+
+    const panel = document.createElement('div');
+    panel.id = 'layout-mobile-panel';
+    panel.className = 'layout-mobile-panel';
+    _mobilePanel = panel;
+
+    const header = document.createElement('div');
+    header.className = 'layout-mobile-panel-header';
+
+    const title = document.createElement('span');
+    title.className = 'layout-mobile-panel-title';
+    title.textContent = 'Edit Layout';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-secondary btn-sm';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', hideMobilePanel);
+
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.className = 'btn btn-primary btn-sm';
+    doneBtn.textContent = 'Done';
+    doneBtn.addEventListener('click', () => {
+      saveLayout(_mobileLayout);
+      applyLayout(_mobileLayout);
+      hideMobilePanel();
+    });
+
+    header.appendChild(cancelBtn);
+    header.appendChild(title);
+    header.appendChild(doneBtn);
+    panel.appendChild(header);
+
+    const list = document.createElement('div');
+    list.className = 'layout-mobile-list';
+    list.id = 'layout-mobile-list';
+    panel.appendChild(list);
+
+    document.body.appendChild(panel);
+    renderMobileList();
+
+    const editBtn = document.getElementById('btn-edit-layout');
+    if (editBtn) editBtn.classList.add('active');
+  }
+
+  function hideMobilePanel() {
+    if (_mobilePanel) { _mobilePanel.remove(); _mobilePanel = null; }
+    _mobileLayout = null;
+    const editBtn = document.getElementById('btn-edit-layout');
+    if (editBtn) editBtn.classList.remove('active');
+  }
+
+  function renderMobileList() {
+    const list = document.getElementById('layout-mobile-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    _mobileLayout.forEach((entry, idx) => {
+      const meta = WIDGET_META[entry.id] || { name: entry.id, iconName: 'document' };
+
+      const item = document.createElement('div');
+      item.className = 'layout-mobile-item' + (entry.hidden ? ' layout-mobile-item-hidden' : '');
+
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'layout-mobile-item-icon';
+      iconWrap.innerHTML = icon(meta.iconName, 18);
+
+      const name = document.createElement('span');
+      name.className = 'layout-mobile-item-name';
+      name.textContent = meta.name;
+
+      const controls = document.createElement('div');
+      controls.className = 'layout-mobile-item-controls';
+
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'layout-mobile-btn';
+      upBtn.title = 'Move up';
+      upBtn.innerHTML = icon('arrow-up', 16);
+      upBtn.disabled = idx === 0;
+      upBtn.addEventListener('click', () => {
+        if (idx === 0) return;
+        [_mobileLayout[idx - 1], _mobileLayout[idx]] = [_mobileLayout[idx], _mobileLayout[idx - 1]];
+        renderMobileList();
+      });
+
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'layout-mobile-btn';
+      downBtn.title = 'Move down';
+      downBtn.innerHTML = icon('arrow-down', 16);
+      downBtn.disabled = idx === _mobileLayout.length - 1;
+      downBtn.addEventListener('click', () => {
+        if (idx >= _mobileLayout.length - 1) return;
+        [_mobileLayout[idx], _mobileLayout[idx + 1]] = [_mobileLayout[idx + 1], _mobileLayout[idx]];
+        renderMobileList();
+      });
+
+      const eyeBtn = document.createElement('button');
+      eyeBtn.type = 'button';
+      eyeBtn.className = 'layout-mobile-btn';
+      eyeBtn.title = entry.hidden ? 'Show widget' : 'Hide widget';
+      eyeBtn.innerHTML = icon(entry.hidden ? 'eye-off' : 'eye', 16);
+      eyeBtn.addEventListener('click', () => {
+        entry.hidden = !entry.hidden;
+        renderMobileList();
+      });
+
+      controls.appendChild(upBtn);
+      controls.appendChild(downBtn);
+      controls.appendChild(eyeBtn);
+
+      item.appendChild(iconWrap);
+      item.appendChild(name);
+      item.appendChild(controls);
+      list.appendChild(item);
+    });
   }
 
   // ── Init ───────────────────────────────────────────────────────────────
 
   const editBtn = document.getElementById('btn-edit-layout');
   if (editBtn) {
-    editBtn.addEventListener('click', () => editMode ? exitEditMode() : enterEditMode());
+    editBtn.addEventListener('click', () => {
+      if (isMobile()) {
+        _mobilePanel ? hideMobilePanel() : showMobilePanel();
+      } else {
+        editMode ? exitEditMode() : enterEditMode();
+      }
+    });
   }
 
   applyLayout(loadLayout());
@@ -400,6 +570,7 @@
   window.addEventListener('storage', e => {
     if (e.key === LAYOUT_KEY) {
       if (editMode) exitEditMode();
+      if (_mobilePanel) hideMobilePanel();
       applyLayout(loadLayout());
     }
   });
