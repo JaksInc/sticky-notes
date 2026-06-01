@@ -587,12 +587,144 @@
     });
   }
 
+  // ── Quick Links ─────────────────────────────────────────────────────────
+
+  const LINKS_KEY = 'sticky-links';
+  let linksFormOpen = false;
+
+  function loadLinks() {
+    try { return JSON.parse(localStorage.getItem(LINKS_KEY) || '[]'); }
+    catch { return []; }
+  }
+
+  function saveLinks(links) {
+    localStorage.setItem(LINKS_KEY, JSON.stringify(links));
+  }
+
+  function buildLinksGrid(links) {
+    const grid = document.createElement('div');
+    grid.className = 'links-grid';
+
+    links.forEach((link, idx) => {
+      const item = document.createElement('a');
+      item.className = 'link-item';
+      item.href = link.url;
+      item.target = '_blank';
+      item.rel = 'noopener noreferrer';
+
+      const lbl = document.createElement('span');
+      lbl.className = 'link-item-label';
+      lbl.textContent = link.name;
+
+      const del = document.createElement('button');
+      del.className = 'link-del';
+      del.innerHTML = icon('trash', 13);
+      del.title = 'Remove link';
+      del.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const all = loadLinks();
+        all.splice(idx, 1);
+        saveLinks(all);
+        renderLinks();
+      });
+
+      item.appendChild(lbl);
+      item.appendChild(del);
+      grid.appendChild(item);
+    });
+
+    return grid;
+  }
+
+  function renderLinks() {
+    const links = loadLinks();
+    const body = document.getElementById('links-body');
+    body.innerHTML = '';
+
+    if (linksFormOpen) {
+      const form = document.createElement('div');
+      form.className = 'link-add-form';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'todo-input';
+      nameInput.placeholder = 'Name (e.g. "Inventory")';
+      nameInput.id = 'link-name-input';
+
+      const urlInput = document.createElement('input');
+      urlInput.type = 'url';
+      urlInput.className = 'todo-input';
+      urlInput.placeholder = 'URL (e.g. "https://...")';
+      urlInput.id = 'link-url-input';
+
+      const actions = document.createElement('div');
+      actions.className = 'link-form-actions';
+
+      function saveLink() {
+        const name = nameInput.value.trim();
+        const url = urlInput.value.trim();
+        if (!name || !url) return;
+        const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+        const all = loadLinks();
+        all.push({ id: crypto.randomUUID(), name, url: finalUrl });
+        saveLinks(all);
+        linksFormOpen = false;
+        renderLinks();
+      }
+
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn btn-primary btn-sm';
+      saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', saveLink);
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-secondary btn-sm';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', () => { linksFormOpen = false; renderLinks(); });
+
+      nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') urlInput.focus(); });
+      urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveLink(); });
+
+      actions.appendChild(saveBtn);
+      actions.appendChild(cancelBtn);
+      form.appendChild(nameInput);
+      form.appendChild(urlInput);
+      form.appendChild(actions);
+      body.appendChild(form);
+
+      if (links.length > 0) body.appendChild(buildLinksGrid(links));
+
+      setTimeout(() => nameInput.focus(), 0);
+      return;
+    }
+
+    if (links.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'links-empty';
+      empty.textContent = 'No links yet — click Add to get started.';
+      body.appendChild(empty);
+      return;
+    }
+
+    body.appendChild(buildLinksGrid(links));
+  }
+
+  function initLinks() {
+    renderLinks();
+    document.getElementById('links-add-btn').addEventListener('click', () => {
+      linksFormOpen = true;
+      renderLinks();
+    });
+  }
+
   // ── Init ────────────────────────────────────────────────────────────────
 
   initCalendar();
   renderMemo();
   initTodos();
   initNotes();
+  initLinks();
 
   const popoutBtn = document.getElementById('btn-popout');
   if (popoutBtn) {
