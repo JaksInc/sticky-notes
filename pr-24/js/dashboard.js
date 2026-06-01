@@ -12,6 +12,9 @@
   let memoIsEditing = false;
   let todoPage = 0;
   let calSelectedCell = null;
+  let linkFormColor = null;
+  let editingLinkId = null;
+  let editFormColor = null;
 
   function isMobile() {
     return window.innerWidth < 768 || 'ontouchstart' in window;
@@ -601,22 +604,135 @@
     localStorage.setItem(LINKS_KEY, JSON.stringify(links));
   }
 
+  function buildLinkColorRow(currentColor, onChange) {
+    const row = document.createElement('div');
+    row.className = 'link-color-row';
+    SWATCHES.forEach(color => {
+      const sw = document.createElement('button');
+      sw.type = 'button';
+      sw.className = 'memo-swatch' + (color === currentColor ? ' active' : '');
+      sw.style.background = color;
+      sw.title = color;
+      sw.addEventListener('click', () => {
+        const next = onChange(color);
+        row.querySelectorAll('.memo-swatch').forEach(s => s.classList.remove('active'));
+        if (next) sw.classList.add('active');
+      });
+      row.appendChild(sw);
+    });
+    return row;
+  }
+
   function buildLinksGrid(links) {
     const grid = document.createElement('div');
     grid.className = 'links-grid';
 
     links.forEach((link, idx) => {
+      if (link.id === editingLinkId) {
+        const form = document.createElement('div');
+        form.className = 'link-edit-form';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'todo-input';
+        nameInput.value = link.name;
+
+        const urlInput = document.createElement('input');
+        urlInput.type = 'url';
+        urlInput.className = 'todo-input';
+        urlInput.value = link.url;
+
+        const colorRow = buildLinkColorRow(editFormColor, color => {
+          editFormColor = editFormColor === color ? null : color;
+          return editFormColor;
+        });
+
+        function saveEdit() {
+          const name = nameInput.value.trim();
+          const url = urlInput.value.trim();
+          if (!name || !url) return;
+          const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+          const all = loadLinks();
+          const i = all.findIndex(l => l.id === link.id);
+          if (i !== -1) { all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null }; saveLinks(all); }
+          editingLinkId = null;
+          editFormColor = null;
+          renderLinks();
+        }
+
+        function cancelEdit() {
+          editingLinkId = null;
+          editFormColor = null;
+          renderLinks();
+        }
+
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.className = 'btn btn-primary btn-sm';
+        saveBtn.textContent = 'Save';
+        saveBtn.addEventListener('click', saveEdit);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-secondary btn-sm';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', cancelEdit);
+
+        nameInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') urlInput.focus();
+          if (e.key === 'Escape') cancelEdit();
+        });
+        urlInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') saveEdit();
+          if (e.key === 'Escape') cancelEdit();
+        });
+
+        const actions = document.createElement('div');
+        actions.className = 'link-form-actions';
+        actions.appendChild(saveBtn);
+        actions.appendChild(cancelBtn);
+
+        form.appendChild(nameInput);
+        form.appendChild(urlInput);
+        form.appendChild(colorRow);
+        form.appendChild(actions);
+        grid.appendChild(form);
+        setTimeout(() => nameInput.focus(), 0);
+        return;
+      }
+
       const item = document.createElement('a');
       item.className = 'link-item';
       item.href = link.url;
       item.target = '_blank';
       item.rel = 'noopener noreferrer';
 
+      if (link.color) {
+        item.style.background = link.color;
+        item.style.color = '#333';
+        item.dataset.colored = '1';
+      }
+
       const lbl = document.createElement('span');
       lbl.className = 'link-item-label';
       lbl.textContent = link.name;
 
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'link-edit-btn';
+      editBtn.innerHTML = icon('pencil', 13);
+      editBtn.title = 'Edit link';
+      editBtn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        editingLinkId = link.id;
+        editFormColor = link.color || null;
+        linksFormOpen = false;
+        renderLinks();
+      });
+
       const del = document.createElement('button');
+      del.type = 'button';
       del.className = 'link-del';
       del.innerHTML = icon('trash', 13);
       del.title = 'Remove link';
@@ -630,6 +746,7 @@
       });
 
       item.appendChild(lbl);
+      item.appendChild(editBtn);
       item.appendChild(del);
       grid.appendChild(item);
     });
@@ -658,6 +775,11 @@
       urlInput.placeholder = 'URL (e.g. "https://...")';
       urlInput.id = 'link-url-input';
 
+      const colorRow = buildLinkColorRow(linkFormColor, color => {
+        linkFormColor = linkFormColor === color ? null : color;
+        return linkFormColor;
+      });
+
       const actions = document.createElement('div');
       actions.className = 'link-form-actions';
 
@@ -667,9 +789,16 @@
         if (!name || !url) return;
         const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
         const all = loadLinks();
-        all.push({ id: crypto.randomUUID(), name, url: finalUrl });
+        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null });
         saveLinks(all);
         linksFormOpen = false;
+        linkFormColor = null;
+        renderLinks();
+      }
+
+      function cancelAdd() {
+        linksFormOpen = false;
+        linkFormColor = null;
         renderLinks();
       }
 
@@ -681,15 +810,22 @@
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'btn btn-secondary btn-sm';
       cancelBtn.textContent = 'Cancel';
-      cancelBtn.addEventListener('click', () => { linksFormOpen = false; renderLinks(); });
+      cancelBtn.addEventListener('click', cancelAdd);
 
-      nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') urlInput.focus(); });
-      urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveLink(); });
+      nameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') urlInput.focus();
+        if (e.key === 'Escape') cancelAdd();
+      });
+      urlInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveLink();
+        if (e.key === 'Escape') cancelAdd();
+      });
 
       actions.appendChild(saveBtn);
       actions.appendChild(cancelBtn);
       form.appendChild(nameInput);
       form.appendChild(urlInput);
+      form.appendChild(colorRow);
       form.appendChild(actions);
       body.appendChild(form);
 
@@ -714,6 +850,8 @@
     renderLinks();
     document.getElementById('links-add-btn').addEventListener('click', () => {
       linksFormOpen = true;
+      linkFormColor = null;
+      editingLinkId = null;
       renderLinks();
     });
   }
