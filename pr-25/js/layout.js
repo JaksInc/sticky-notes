@@ -335,23 +335,28 @@
 
       const header = widget.querySelector('.widget-header');
 
+      // All edit controls go into a single right-side group so the title never moves
+      const editGroup = document.createElement('div');
+      editGroup.className = 'layout-edit-group';
+
       const handle = document.createElement('span');
       handle.className = 'layout-drag-handle';
       handle.innerHTML = icon('grip', 14);
       handle.title = 'Drag to move';
-      header.prepend(handle);
+      editGroup.appendChild(handle);
 
-      const actions = header.querySelector('.widget-header-actions');
-      const eyeBtn = buildEyeBtn(entry);
-      if (actions) {
-        actions.prepend(eyeBtn);
-      } else {
-        header.appendChild(eyeBtn);
-      }
+      editGroup.appendChild(buildEyeBtn(entry));
 
       if (!RESIZE_DISABLED.has(id)) {
-        header.appendChild(buildResizeControls(entry));
+        editGroup.appendChild(buildResizeControls(entry));
         widget.appendChild(buildResizeCorner(entry, widget));
+      }
+
+      const actions = header.querySelector('.widget-header-actions');
+      if (actions) {
+        actions.appendChild(editGroup);
+      } else {
+        header.appendChild(editGroup);
       }
 
       widget.setAttribute('draggable', 'true');
@@ -414,7 +419,7 @@
     const editBtn = document.getElementById('btn-edit-layout');
     if (editBtn) editBtn.classList.remove('active');
 
-    document.querySelectorAll('.layout-drag-handle, .layout-resize-controls, .layout-resize-corner, .layout-eye-btn').forEach(el => el.remove());
+    document.querySelectorAll('.layout-edit-group, .layout-resize-corner').forEach(el => el.remove());
 
     document.querySelectorAll('[data-widget-id]').forEach(w => {
       w.removeAttribute('draggable');
