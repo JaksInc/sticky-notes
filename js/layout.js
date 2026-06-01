@@ -249,9 +249,20 @@
   // ── Drag & Drop ────────────────────────────────────────────────────────
 
   function makeDragHandlers(widget) {
+    const header = widget.querySelector('.widget-header');
+    let dragFromHeader = false;
+
+    // dragstart e.target is the draggable element itself, not the element under
+    // the cursor — track mousedown to know where the drag gesture originated
+    const mdHandler = e => {
+      dragFromHeader = header.contains(e.target) && !e.target.closest('button');
+    };
+    widget.addEventListener('mousedown', mdHandler);
+    _listeners.push({ el: widget, evt: 'mousedown', fn: mdHandler });
+
     return {
       dragstart(e) {
-        if (!widget.querySelector('.widget-header').contains(e.target)) {
+        if (!dragFromHeader) {
           e.preventDefault();
           return;
         }
@@ -298,6 +309,8 @@
 
   // ── Desktop Edit mode ──────────────────────────────────────────────────
 
+  const RESIZE_DISABLED = new Set(['calendar', 'memo']);
+
   function enterEditMode() {
     editMode = true;
     _currentLayout = loadLayout();
@@ -336,8 +349,10 @@
         header.appendChild(eyeBtn);
       }
 
-      header.appendChild(buildResizeControls(entry));
-      widget.appendChild(buildResizeCorner(entry, widget));
+      if (!RESIZE_DISABLED.has(id)) {
+        header.appendChild(buildResizeControls(entry));
+        widget.appendChild(buildResizeCorner(entry, widget));
+      }
 
       widget.setAttribute('draggable', 'true');
       const h = makeDragHandlers(widget);
