@@ -483,12 +483,18 @@ body { overflow-x: hidden; }
   position: relative;
 }
 .layout-edit-mode .widget.layout-dragging { opacity: 0.4; cursor: grabbing; }
+.layout-edit-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
 .layout-drag-handle {
   display: inline-flex;
   align-items: center;
   color: var(--color-text-muted);
   cursor: grab;
-  margin-right: 6px;
   flex-shrink: 0;
 }
 .layout-ghost {
@@ -502,7 +508,6 @@ body { overflow-x: hidden; }
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-left: 6px;
   flex-wrap: wrap;
 }
 .layout-resize-btn {
