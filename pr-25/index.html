@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quarterboard</title>
+  <script>
+    (function(){var t=localStorage.getItem('qb-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Quarterboard">
+  <meta name="theme-color" content="#f96302">
+  <link rel="stylesheet" href="css/index.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <div class="toolbar">
+    <h1>Dashboard</h1>
+    <button class="btn btn-secondary" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode"></button>
+    <button class="btn btn-secondary" id="btn-edit-layout" title="Edit layout"><span data-icon="grid"></span> <span class="btn-label">Layout</span></button>
+    <button class="btn btn-secondary" id="btn-popout" title="Open in popup window"><span data-icon="popout"></span> Pop Out</button>
+  </div>
+
+  <div class="widget-grid">
+
+    <!-- Calendar widget -->
+    <div class="widget widget-calendar" data-widget-id="calendar">
+      <div class="widget-header">
+        <span class="widget-title"><span class="widget-icon" data-icon="calendar"></span> Calendar</span>
+      </div>
+      <div class="widget-body" id="cal-body"></div>
+    </div>
+
+    <!-- Pinned note widget -->
+    <div class="widget widget-memo" data-widget-id="memo">
+      <div class="widget-header">
+        <span class="widget-title"><span class="widget-icon" data-icon="bookmark"></span> Pinned Note</span>
+        <div class="widget-header-actions" id="memo-header-actions"></div>
+      </div>
+      <div class="widget-body memo-body" id="memo-body"></div>
+    </div>
+
+    <!-- To-Do widget -->
+    <div class="widget widget-todos" data-widget-id="todos">
+      <div class="widget-header">
+        <span class="widget-title"><span class="widget-icon" data-icon="checklist"></span> To-Do</span>
+      </div>
+      <div class="widget-body">
+        <div class="todo-add">
+          <input type="text" id="todo-input" class="todo-input" placeholder="Add a task…" autocomplete="off">
+          <button class="btn btn-primary btn-sm" id="todo-add-btn"><span data-icon="plus"></span></button>
+        </div>
+        <ul class="todo-list" id="todo-list"></ul>
+        <div class="todo-pagination" id="todo-pagination" style="display:none">
+          <button class="todo-page-btn" id="todo-prev" title="Previous page">&#8592;</button>
+          <span id="todo-page-info"></span>
+          <button class="todo-page-btn" id="todo-next" title="Next page">&#8594;</button>
+        </div>
+        <div class="todo-footer" id="todo-footer" style="display:none">
+          <span id="todo-count"></span>
+          <button class="todo-clear-btn" id="todo-clear-btn">Clear completed</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes widget -->
+    <div class="widget widget-notes" data-widget-id="notes">
+      <div class="widget-header">
+        <span class="widget-title"><span class="widget-icon" data-icon="document"></span> Notes</span>
+        <div class="widget-header-actions">
+          <button class="btn btn-primary btn-sm" id="notes-new-btn"><span data-icon="plus"></span> New</button>
+          <a href="notes.html" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+      </div>
+      <div class="widget-body widget-notes-body">
+        <div class="grid" id="notes-grid"></div>
+        <div class="empty-state notes-empty" id="notes-empty" style="display:none">
+          No notes yet — click <strong>New</strong> to get started.
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links widget -->
+    <div class="widget widget-links" data-widget-id="links">
+      <div class="widget-header">
+        <span class="widget-title"><span class="widget-icon" data-icon="link"></span> Quick Links</span>
+        <div class="widget-header-actions">
+          <button class="btn btn-primary btn-sm" id="links-add-btn"><span data-icon="plus"></span> Add</button>
+        </div>
+      </div>
+      <div class="widget-body" id="links-body"></div>
+    </div>
+
+  </div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/barcode.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    document.querySelectorAll('[data-icon]').forEach(function(el) {
+      el.innerHTML = icon(el.dataset.icon, parseInt(el.dataset.size) || 15);
+    });
+  </script>
+</body>
+</html>
