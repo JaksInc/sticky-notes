@@ -187,9 +187,7 @@
     document.getElementById('sync-modal').style.display = 'none';
   }
 
-  const syncBtn = document.getElementById('btn-sync');
-  syncBtn.innerHTML = icon('refresh', 14) + '<span class="btn-label"> Sync</span>';
-  syncBtn.addEventListener('click', openSyncModal);
+  document.getElementById('btn-sync').addEventListener('click', openSyncModal);
 
   document.getElementById('sync-close').addEventListener('click', closeSyncModal);
   document.getElementById('sync-gen-btn').addEventListener('click', generateSyncCode);

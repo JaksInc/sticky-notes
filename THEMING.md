@@ -171,7 +171,7 @@ icons/
 ```
 
 ### Current icon spec
-Orange (`#f96302`) rounded square background (`rx="18"` on a 100×100 viewBox), four white rounded rectangles in a 2×2 grid — representing the widget dashboard layout. White rectangles decrease in opacity bottom-right to suggest depth.
+Orange (`#f96302`) **square** background (no `rx`, full bleed on a 100×100 viewBox), six white rounded rectangles in a 3-2-2 grid — representing the widget dashboard layout. White rectangles decrease in opacity bottom-right to suggest depth.
 
 ### Favicon (browser tab)
 The browser tab icon is the SVG directly:
@@ -220,7 +220,95 @@ Run with: `node scripts/gen-icons.mjs`
 - [ ] Edit `icons/icon.svg`
 - [ ] Run `node scripts/gen-icons.mjs`
 - [ ] Verify `icons/icon-192.png` and `icons/icon-512.png` are updated
-- [ ] Bump the service worker cache version in `sw.js` (so devices re-fetch the new icon)
+
+---
+
+## Service Worker
+
+`sw.js` is a **self-unregistering cleanup stub** — it does not cache anything. On activate it deletes all caches, unregisters itself, and then claims clients. This exists only to clean up any old cached service workers that users may have installed from a previous version of the app.
+
+Offline support was removed deliberately. Caching caused stale asset bugs that outweighed the benefit.
+
+---
+
+## Mobile Viewport
+
+All pages use:
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+```
+
+Pinch-zoom is disabled across the app. This prevents accidental zoom on input focus (iOS auto-zooms 16px+ inputs) and keeps the layout stable on touch devices.
+
+---
+
+## Share / Sync Code Format
+
+Notes, Quick Links, and full-device sync all use the same code system for cross-device sharing:
+
+1. **Upload**: serialize payload as JSON, `POST` to `https://mantledb.sh/v2/sticky-notes-share/<uuid>` (32-char hex UUID).
+2. **Encode**: convert UUID to **base36** → 25-char string → display as 5 groups of 5 separated by `·`.
+3. **QR**: encode `<page-url>?<param>=<code>` for camera-scan auto-import.
+4. **Download**: user enters code → decode base36 back to hex UUID → `GET` same URL.
+
+```js
+// Encode
+BigInt('0x' + hex).toString(36).toUpperCase().padStart(25, '0')
+// Decode
+let n = 0n; for (const ch of code) n = n * 36n + BigInt(parseInt(ch, 36));
+n.toString(16).padStart(32, '0')
+```
+
+URL params that trigger auto-import:
+| Page | Param | Payload |
+|---|---|---|
+| `note.html` | `?gist=<hex-uuid>` | Single note `{ content, color }` |
+| `index.html` | `?import-links=<base36>` | Quick Links array |
+| `index.html` | `?sync-import=<base36>` | Full sync bundle |
+
+---
+
+## Widget Layout
+
+Widgets are positioned using CSS Grid with explicit placement (no auto-flow). Layout is persisted in `localStorage['qb-layout']` as:
+
+```json
+[{ "id": "calendar", "x": 0, "y": 0, "w": 1, "h": 4 }, ...]
+```
+
+`grid-auto-rows: 80px` on desktop; `grid-auto-rows: auto` on mobile (single column).
+
+On mobile (≤600px) all inline `grid-column` / `grid-row` styles are cleared and widgets stack naturally. The Layout button shows a reorder panel instead of drag handles.
+
+---
+
+## Quick Links Widget
+
+Each link: `{ id, name, url, color?, icon? }`.
+
+- `color`: optional pastel hex (same swatch palette as notes). Uncolored links use the default orange pill style.
+- `icon`: optional key from the `LINK_ICONS` array in `dashboard.js` (27 icons, 3 rows of 9).
+- Icons are from the Heroicons v1 Solid set (20×20 viewBox) via `icon(name, size)` — same as all other icons.
+
+Share/import uses the base36 code system above (`?import-links=`).
+
+---
+
+## Sync Everything
+
+`js/sync.js` — standalone IIFE loaded last on `index.html`.
+
+Bundles all localStorage keys into one JSON object:
+```json
+{ "v": 1, "exported": "<ISO timestamp>",
+  "sticky-notes": [...], "sticky-links": [...],
+  "qb-layout": [...], "sticky-todos": [...],
+  "sticky-pinned": "<id>", "sticky-notes-view": "grid|list" }
+```
+
+On import: shows note/link/todo counts + export timestamp in `confirm()` before overwriting. Calls `location.reload()` after restore so all widgets re-initialize from fresh localStorage.
+
+QR on export encodes `index.html?sync-import=<code>` so scanning auto-imports.
 
 ---
 
@@ -259,6 +347,56 @@ box-shadow: 0 0 0 3px rgba(249,99,2,.15);
 
 ---
 
-## Service Worker Cache
+## Iconography — Available Icons
 
-When adding new pages or assets, update the `ASSETS` array in `sw.js` and increment the cache version key (`CACHE` constant). The icon PNG files are cached; regenerating them requires a cache bump so installed PWAs pick up the new images.
+`js/icons.js` exports a single `icon(name, size)` function returning an inline SVG string. All icons are **Heroicons v1 Solid** (20×20 viewBox, `fill="currentColor"`).
+
+### Full icon list
+
+| Name | Usage |
+|---|---|
+| `back` | Toolbar back button |
+| `pencil` | Edit actions |
+| `trash` | Delete actions |
+| `plus` | New / add actions |
+| `check` | Completed state |
+| `hash` | Import by code |
+| `download` | Import file / import links |
+| `upload` | Export / share links |
+| `popout` | Pop-out window |
+| `list` | List view toggle |
+| `grid` | Grid view toggle / Layout button |
+| `refresh` | Sync button |
+| `bookmark` | Pinned note widget |
+| `palette` | Color picker |
+| `grip` | Drag handle |
+| `sun` / `moon` | Theme toggle |
+| `swap` | Swap pinned note |
+| `unpin` | Unpin note |
+| `eye` / `eye-off` | Widget visibility |
+| `calendar` | Calendar widget |
+| `document` | Notes widget |
+| `checklist` | To-Do widget |
+| `link` | Quick Links widget |
+| `chart` | Analytics links |
+| `folder` | Folder links |
+| `people` | People/HR links |
+| `gear` | Settings links |
+| `home` | Home links |
+| `star` | Starred links |
+| `terminal` | Dev/terminal links |
+| `chat` | Chat links |
+| `video` | Video links |
+| `bell` | Notifications links |
+| `mail` | Mail links |
+| `pin` | Map/location links |
+| `scanner` | Scanner/camera links |
+| `truck` | Truck/delivery links |
+| `tag` | Price tag/inventory links |
+| `orders` | Order management links |
+| `paint` | Paint/color links |
+| `browser` | Web/desktop links |
+| `table` | Table/spreadsheet links |
+| `engage` | People/community links |
+| `register` | POS/calculator links |
+| `globe` | Web/internet links |
