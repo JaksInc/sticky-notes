@@ -803,11 +803,13 @@
       }
 
       const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
       saveBtn.className = 'btn btn-primary btn-sm';
       saveBtn.textContent = 'Save';
       saveBtn.addEventListener('click', saveLink);
 
       const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
       cancelBtn.className = 'btn btn-secondary btn-sm';
       cancelBtn.textContent = 'Cancel';
       cancelBtn.addEventListener('click', cancelAdd);
