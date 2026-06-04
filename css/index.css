@@ -15,7 +15,9 @@ body {
   padding: 12px 16px;
   background: var(--color-toolbar-bg);
   border-bottom: 2px solid var(--color-border);
+  overflow: hidden;
 }
+.toolbar .btn { flex-shrink: 0; }
 
 .toolbar h1 {
   margin: 0;
