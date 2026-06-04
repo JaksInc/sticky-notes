@@ -13,8 +13,10 @@
   let todoPage = 0;
   let calSelectedCell = null;
   let linkFormColor = null;
+  let linkFormIcon  = null;
   let editingLinkId = null;
   let editFormColor = null;
+  let editFormIcon  = null;
 
   function isMobile() {
     return window.innerWidth < 768 || 'ontouchstart' in window;
@@ -595,6 +597,20 @@
   const LINKS_KEY = 'sticky-links';
   let linksFormOpen = false;
 
+  const LINK_COLORS = [
+    '#FFF9C4', '#FFECB3', '#FFE0B2', '#FFCCBC',
+    '#F8BBD0', '#F3E5F5', '#E8EAF6', '#BBDEFB',
+    '#B2EBF2', '#C8E6C9', '#DCEDC8', '#F0F4C3',
+    '#FFAB91', '#CE93D8', '#90CAF9', '#80CBC4',
+    '#F5F5F5', '#FFFFFF',
+  ];
+
+  const LINK_ICONS = [
+    'globe', 'mail', 'chart', 'folder', 'people', 'gear',
+    'home', 'star', 'terminal', 'chat', 'video', 'bell',
+    'calendar', 'document', 'checklist', 'link', 'bookmark', 'pin',
+  ];
+
   function loadLinks() {
     try { return JSON.parse(localStorage.getItem(LINKS_KEY) || '[]'); }
     catch { return []; }
@@ -607,20 +623,39 @@
   function buildLinkColorRow(currentColor, onChange) {
     const row = document.createElement('div');
     row.className = 'link-color-row';
-    SWATCHES.forEach(color => {
+    LINK_COLORS.forEach(color => {
       const sw = document.createElement('button');
       sw.type = 'button';
-      sw.className = 'memo-swatch' + (color === currentColor ? ' active' : '');
+      sw.className = 'link-color-swatch' + (color === currentColor ? ' active' : '');
       sw.style.background = color;
       sw.title = color;
       sw.addEventListener('click', () => {
         const next = onChange(color);
-        row.querySelectorAll('.memo-swatch').forEach(s => s.classList.remove('active'));
+        row.querySelectorAll('.link-color-swatch').forEach(s => s.classList.remove('active'));
         if (next) sw.classList.add('active');
       });
       row.appendChild(sw);
     });
     return row;
+  }
+
+  function buildLinkIconPicker(currentIcon, onChange) {
+    const wrap = document.createElement('div');
+    wrap.className = 'link-icon-picker';
+    LINK_ICONS.forEach(name => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'link-icon-btn' + (name === currentIcon ? ' active' : '');
+      btn.title = name;
+      btn.innerHTML = icon(name, 16);
+      btn.addEventListener('click', () => {
+        const next = onChange(name);
+        wrap.querySelectorAll('.link-icon-btn').forEach(b => b.classList.remove('active'));
+        if (next) btn.classList.add('active');
+      });
+      wrap.appendChild(btn);
+    });
+    return wrap;
   }
 
   function buildLinksGrid(links) {
@@ -642,6 +677,11 @@
         urlInput.className = 'todo-input';
         urlInput.value = link.url;
 
+        const iconPicker = buildLinkIconPicker(editFormIcon, name => {
+          editFormIcon = editFormIcon === name ? null : name;
+          return editFormIcon;
+        });
+
         const colorRow = buildLinkColorRow(editFormColor, color => {
           editFormColor = editFormColor === color ? null : color;
           return editFormColor;
@@ -654,15 +694,20 @@
           const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
           const all = loadLinks();
           const i = all.findIndex(l => l.id === link.id);
-          if (i !== -1) { all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null }; saveLinks(all); }
+          if (i !== -1) {
+            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, icon: editFormIcon || null };
+            saveLinks(all);
+          }
           editingLinkId = null;
           editFormColor = null;
+          editFormIcon  = null;
           renderLinks();
         }
 
         function cancelEdit() {
           editingLinkId = null;
           editFormColor = null;
+          editFormIcon  = null;
           renderLinks();
         }
 
@@ -694,6 +739,7 @@
 
         form.appendChild(nameInput);
         form.appendChild(urlInput);
+        form.appendChild(iconPicker);
         form.appendChild(colorRow);
         form.appendChild(actions);
         grid.appendChild(form);
@@ -701,42 +747,55 @@
         return;
       }
 
-      const item = document.createElement('a');
-      item.className = 'link-item';
-      item.href = link.url;
-      item.target = '_blank';
-      item.rel = 'noopener noreferrer';
+      const tile = document.createElement('a');
+      tile.className = 'link-tile';
+      tile.href = link.url;
+      tile.target = '_blank';
+      tile.rel = 'noopener noreferrer';
 
       if (link.color) {
-        item.style.background = link.color;
-        item.style.color = '#333';
-        item.dataset.colored = '1';
+        tile.style.background = link.color;
+        tile.style.color = '#333';
+        tile.dataset.colored = '1';
       }
 
-      const lbl = document.createElement('span');
-      lbl.className = 'link-item-label';
-      lbl.textContent = link.name;
+      const iconEl = document.createElement('div');
+      iconEl.className = 'link-tile-icon';
+      if (link.icon) {
+        iconEl.innerHTML = icon(link.icon, 24);
+      } else {
+        iconEl.textContent = (link.name || '?')[0].toUpperCase();
+        iconEl.classList.add('link-tile-letter');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'link-tile-label';
+      label.textContent = link.name;
+
+      const tileActions = document.createElement('div');
+      tileActions.className = 'link-tile-actions';
 
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
-      editBtn.className = 'link-edit-btn';
-      editBtn.innerHTML = icon('pencil', 13);
-      editBtn.title = 'Edit link';
+      editBtn.className = 'link-tile-action-btn';
+      editBtn.innerHTML = icon('pencil', 11);
+      editBtn.title = 'Edit';
       editBtn.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         editingLinkId = link.id;
         editFormColor = link.color || null;
+        editFormIcon  = link.icon  || null;
         linksFormOpen = false;
         renderLinks();
       });
 
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'link-del';
-      del.innerHTML = icon('trash', 13);
-      del.title = 'Remove link';
-      del.addEventListener('click', e => {
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'link-tile-action-btn';
+      delBtn.innerHTML = icon('trash', 11);
+      delBtn.title = 'Delete';
+      delBtn.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         const all = loadLinks();
@@ -745,10 +804,13 @@
         renderLinks();
       });
 
-      item.appendChild(lbl);
-      item.appendChild(editBtn);
-      item.appendChild(del);
-      grid.appendChild(item);
+      tileActions.appendChild(editBtn);
+      tileActions.appendChild(delBtn);
+
+      tile.appendChild(iconEl);
+      tile.appendChild(label);
+      tile.appendChild(tileActions);
+      grid.appendChild(tile);
     });
 
     return grid;
@@ -775,6 +837,11 @@
       urlInput.placeholder = 'URL (e.g. "https://...")';
       urlInput.id = 'link-url-input';
 
+      const iconPicker = buildLinkIconPicker(linkFormIcon, name => {
+        linkFormIcon = linkFormIcon === name ? null : name;
+        return linkFormIcon;
+      });
+
       const colorRow = buildLinkColorRow(linkFormColor, color => {
         linkFormColor = linkFormColor === color ? null : color;
         return linkFormColor;
@@ -789,16 +856,18 @@
         if (!name || !url) return;
         const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
         const all = loadLinks();
-        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null });
+        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, icon: linkFormIcon || null });
         saveLinks(all);
         linksFormOpen = false;
         linkFormColor = null;
+        linkFormIcon  = null;
         renderLinks();
       }
 
       function cancelAdd() {
         linksFormOpen = false;
         linkFormColor = null;
+        linkFormIcon  = null;
         renderLinks();
       }
 
@@ -827,6 +896,7 @@
       actions.appendChild(cancelBtn);
       form.appendChild(nameInput);
       form.appendChild(urlInput);
+      form.appendChild(iconPicker);
       form.appendChild(colorRow);
       form.appendChild(actions);
       body.appendChild(form);
@@ -853,6 +923,7 @@
     document.getElementById('links-add-btn').addEventListener('click', () => {
       linksFormOpen = true;
       linkFormColor = null;
+      linkFormIcon  = null;
       editingLinkId = null;
       renderLinks();
     });
