@@ -922,13 +922,26 @@
 
   // ── Links share / import ─────────────────────────────────────────────────
 
+  function uuidToCode(hex) {
+    return BigInt('0x' + hex).toString(36).toUpperCase().padStart(25, '0');
+  }
+
+  function codeToUuid(code) {
+    const s = code.replace(/\s/g, '').toLowerCase();
+    let n = 0n;
+    for (const ch of s) n = n * 36n + BigInt(parseInt(ch, 36));
+    return n.toString(16).padStart(32, '0');
+  }
+
   async function openLinksShareModal() {
     const modal   = document.getElementById('links-share-modal');
     const codeEl  = document.getElementById('links-share-code');
     const copyBtn = document.getElementById('links-copy-code');
+    const qrEl    = document.getElementById('links-qr');
 
     codeEl.textContent = 'Creating…';
     copyBtn.disabled = true;
+    if (qrEl) qrEl.innerHTML = '';
     modal.style.display = 'flex';
 
     try {
@@ -938,15 +951,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loadLinks()),
       });
-      const parts = id.match(/.{8}/g);
-      codeEl.textContent = parts[0] + ' ' + parts[1] + '\n' + parts[2] + ' ' + parts[3];
+      const code = uuidToCode(id);
+      const g = code.match(/.{5}/g);
+      codeEl.textContent = g[0] + ' ' + g[1] + ' ' + g[2] + '\n' + g[3] + ' ' + g[4];
       copyBtn.disabled = false;
       copyBtn.onclick = () => {
-        navigator.clipboard.writeText(id).then(() => {
+        navigator.clipboard.writeText(code).then(() => {
           copyBtn.textContent = 'Copied!';
           setTimeout(() => { copyBtn.textContent = 'Copy Code'; }, 2000);
         });
       };
+      if (qrEl && typeof QRCode !== 'undefined') {
+        const importUrl = location.origin + location.pathname + '?import-links=' + code;
+        new QRCode(qrEl, { text: importUrl, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff' });
+      }
     } catch {
       codeEl.textContent = 'Failed — check connection';
     }
@@ -956,6 +974,8 @@
     const modal  = document.getElementById('links-import-modal');
     const chunks = Array.from(modal.querySelectorAll('.code-chunk'));
     chunks.forEach(c => c.value = '');
+    const errEl = document.getElementById('links-import-error');
+    if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
     modal.style.display = 'flex';
     chunks[0].focus();
   }
@@ -966,23 +986,34 @@
 
     function getCode() { return chunks.map(c => c.value).join(''); }
 
+    function showError(msg) {
+      const errEl = document.getElementById('links-import-error');
+      if (errEl) { errEl.textContent = msg; errEl.style.display = ''; }
+    }
+
+    function hideError() {
+      const errEl = document.getElementById('links-import-error');
+      if (errEl) errEl.style.display = 'none';
+    }
+
     function distributeCode(text, fromIndex) {
-      const clean = text.replace(/[^0-9a-f]/gi, '').toLowerCase();
-      const start = clean.length >= 32 ? 0 : fromIndex;
+      const clean = text.replace(/[^0-9a-z]/gi, '').toLowerCase();
+      const start = clean.length >= 25 ? 0 : fromIndex;
       let offset = 0;
       for (let i = start; i < chunks.length && offset < clean.length; i++) {
-        chunks[i].value = clean.slice(offset, offset + 8);
-        offset += 8;
+        chunks[i].value = clean.slice(offset, offset + 5);
+        offset += 5;
       }
-      const lastFilled = Math.min(start + Math.ceil(clean.length / 8) - 1, chunks.length - 1);
+      const lastFilled = Math.min(start + Math.ceil(clean.length / 5) - 1, chunks.length - 1);
       chunks[lastFilled].focus();
-      if (getCode().length >= 32) document.getElementById('links-import-go').click();
+      if (getCode().length >= 25) document.getElementById('links-import-go').click();
     }
 
     chunks.forEach((input, i) => {
       input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^0-9a-f]/gi, '').toLowerCase();
-        if (input.value.length === 8) {
+        input.value = input.value.replace(/[^0-9a-z]/gi, '').toLowerCase();
+        hideError();
+        if (input.value.length === 5) {
           if (i < chunks.length - 1) chunks[i + 1].focus();
           else document.getElementById('links-import-go').click();
         }
@@ -1000,12 +1031,13 @@
 
     document.getElementById('links-import-go').addEventListener('click', async () => {
       const code = getCode();
-      if (code.length < 32) return;
+      if (code.length < 25) return;
       const goBtn = document.getElementById('links-import-go');
       goBtn.disabled = true;
       goBtn.textContent = 'Importing…';
       try {
-        const res = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + code);
+        const uuid = codeToUuid(code);
+        const res = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + uuid);
         if (!res.ok) throw new Error('Not found');
         const imported = await res.json();
         if (!Array.isArray(imported)) throw new Error('Invalid data');
@@ -1029,7 +1061,7 @@
         renderLinks();
         document.getElementById('links-import-modal').style.display = 'none';
       } catch {
-        alert('Import failed — check the code and your connection.');
+        showError('Import failed — check the code and your connection.');
       } finally {
         goBtn.disabled = false;
         goBtn.textContent = 'Import';
@@ -1074,6 +1106,19 @@
   initTodos();
   initNotes();
   initLinks();
+
+  (function() {
+    const importCode = new URLSearchParams(location.search).get('import-links');
+    if (!importCode) return;
+    const clean = importCode.replace(/\s/g, '');
+    if (clean.length !== 25) return;
+    const modal = document.getElementById('links-import-modal');
+    const chunks = Array.from(modal.querySelectorAll('.code-chunk'));
+    const groups = clean.match(/.{5}/g) || [];
+    groups.forEach((g, i) => { if (chunks[i]) chunks[i].value = g.toLowerCase(); });
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('links-import-go').click(), 200);
+  })();
 
   const popoutBtn = document.getElementById('btn-popout');
   if (popoutBtn) {

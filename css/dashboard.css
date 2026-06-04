@@ -661,6 +661,13 @@ body { overflow-x: hidden; }
   white-space: pre;
 }
 
+.import-error {
+  color: var(--color-danger, #c0392b);
+  font-size: 13px;
+  text-align: center;
+  padding: 6px 0 2px;
+}
+
 /* Hidden widget (shown dimmed in edit mode, gone in normal mode) */
 .layout-hidden { opacity: .4; }
 .layout-hidden .widget-body { visibility: hidden; }
