@@ -970,6 +970,6 @@
   });
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
   }
 })();
