@@ -22,6 +22,7 @@
   <div class="toolbar">
     <h1>Dashboard</h1>
     <button class="btn btn-secondary" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode"></button>
+    <button class="btn btn-secondary" id="btn-sync" title="Sync everything"></button>
     <button class="btn btn-secondary" id="btn-edit-layout" title="Edit layout"><span data-icon="grid"></span> <span class="btn-label">Layout</span></button>
     <button class="btn btn-secondary" id="btn-popout" title="Open in popup window"><span data-icon="popout"></span> Pop Out</button>
   </div>
@@ -100,6 +101,56 @@
 
   </div>
 
+  <!-- Sync everything modal -->
+  <div class="import-modal" id="sync-modal" style="display:none">
+    <div class="import-modal-box">
+      <div class="import-modal-title">Sync Everything</div>
+
+      <div class="sync-section">
+        <div class="sync-section-label">Export — share to another device</div>
+        <p class="import-modal-hint">Generates a one-time code with all your notes, links, to-dos, and layout.</p>
+        <div class="share-code-block">
+          <div class="share-code-label">Sync code</div>
+          <div class="share-code" id="sync-share-code">—</div>
+        </div>
+        <div id="sync-qr" style="display:flex;justify-content:center;padding:4px 0"></div>
+        <div class="import-modal-actions">
+          <button id="sync-gen-btn">Generate Code</button>
+          <button id="sync-copy-btn" disabled>Copy Code</button>
+        </div>
+      </div>
+
+      <div class="sync-divider"></div>
+
+      <div class="sync-section">
+        <div class="sync-section-label">Import — restore from another device</div>
+        <p class="import-modal-hint">Paste or type the 5-part code. This replaces all current data.</p>
+        <div class="code-inputs" id="sync-import-inputs">
+          <div class="code-row">
+            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
+            <span class="code-sep">·</span>
+            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
+            <span class="code-sep">·</span>
+            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
+          </div>
+          <div class="code-row">
+            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
+            <span class="code-sep">·</span>
+            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
+          </div>
+        </div>
+        <div class="import-error" id="sync-import-error" style="display:none"></div>
+        <div class="import-modal-actions">
+          <button id="sync-import-go">Import All</button>
+        </div>
+      </div>
+
+      <div class="import-modal-actions" style="margin-top:4px">
+        <button id="sync-close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Links import modal -->
   <div class="import-modal" id="links-import-modal" style="display:none">
     <div class="import-modal-box">
@@ -151,6 +202,7 @@
   <script src="js/render.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/sync.js"></script>
   <script>
     document.querySelectorAll('[data-icon]').forEach(function(el) {
       el.innerHTML = icon(el.dataset.icon, parseInt(el.dataset.size) || 15);
