@@ -609,6 +609,8 @@
     'globe', 'mail', 'chart', 'folder', 'people', 'gear',
     'home', 'star', 'terminal', 'chat', 'video', 'bell',
     'calendar', 'document', 'checklist', 'link', 'bookmark', 'pin',
+    'scanner', 'truck', 'tag', 'orders', 'paint', 'browser',
+    'table', 'engage', 'register',
   ];
 
   function loadLinks() {

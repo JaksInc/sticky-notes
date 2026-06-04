@@ -43,6 +43,15 @@
     chat:     '<path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>',
     video:    '<path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>',
     bell:     '<path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>',
+    scanner:  '<path fill-rule="evenodd" d="M1 3h18v8h-7v6H8v-6H1V3zM5 4v6h1V4H5zm3 0v6h2V4H8zm5 0v6h1V4h-1z" clip-rule="evenodd"/>',
+    truck:    '<path d="M2 5h10v7H2V5zm10 7V7l4-2h2v7h-6zM4 16a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z"/>',
+    tag:      '<path fill-rule="evenodd" d="M17.707 9.293l-7-7A1 1 0 0010 2H3a1 1 0 00-1 1v7a1 1 0 00.293.707l7 7a1 1 0 001.414 0l7-7a1 1 0 000-1.414zM5.5 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" clip-rule="evenodd"/>',
+    orders:   '<path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 4a1 1 0 100 2h6a1 1 0 100-2H7zm0 4a1 1 0 100 2h6a1 1 0 100-2H7zm0 4a1 1 0 100 2h3a1 1 0 100-2H7z" clip-rule="evenodd"/>',
+    paint:    '<path d="M4 2a1 1 0 00-1 1v5a1 1 0 001 1h12a1 1 0 001-1V3a1 1 0 00-1-1H4zM9 9h2v9h-2V9z"/>',
+    browser:  '<path fill-rule="evenodd" d="M3 3a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2H3zm0 4h14v8H3V7zm1-3a1 1 0 110 2 1 1 0 010-2zm3 0a1 1 0 110 2 1 1 0 010-2zm3 1a1 1 0 000 2h4a1 1 0 100-2H10z" clip-rule="evenodd"/>',
+    table:    '<path fill-rule="evenodd" d="M3 3a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2H3zm1 3v2h3V6H4zm0 4v2h3v-2H4zm0 4v2h3v-2H4zm5-8v2h3V6H9zm0 4v2h3v-2H9zm0 4v2h3v-2H9zm5-8v2h2V6h-2zm0 4v2h2v-2h-2zm0 4v2h2v-2h-2z" clip-rule="evenodd"/>',
+    engage:   '<path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>',
+    register: '<path fill-rule="evenodd" d="M3 2a1 1 0 00-1 1v9a1 1 0 001 1h14a1 1 0 001-1V3a1 1 0 00-1-1H3zm2 3h2v2H5V5zm4 0h2v2H9V5zm4 0h2v2h-2V5zM5 9h2v2H5V9zm4 0h2v2H9V9zm4 0h2v2h-2V9z" clip-rule="evenodd"/><path d="M1 15a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1v-2z"/>',
   };
 
   global.icon = function(name, size) {
