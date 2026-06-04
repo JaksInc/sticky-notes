@@ -91,11 +91,53 @@
         <span class="widget-title"><span class="widget-icon" data-icon="link"></span> Quick Links</span>
         <div class="widget-header-actions">
           <button class="btn btn-primary btn-sm" id="links-add-btn"><span data-icon="plus"></span> Add</button>
+          <button class="btn btn-secondary btn-sm" id="links-share-btn" title="Share links via code"></button>
+          <button class="btn btn-secondary btn-sm" id="links-import-btn" title="Import links from code"></button>
         </div>
       </div>
       <div class="widget-body" id="links-body"></div>
     </div>
 
+  </div>
+
+  <!-- Links import modal -->
+  <div class="import-modal" id="links-import-modal" style="display:none">
+    <div class="import-modal-box">
+      <div class="import-modal-title">Import Links by Code</div>
+      <p class="import-modal-hint">Paste or type the 4-part code from the Share screen</p>
+      <div class="code-inputs">
+        <div class="code-row">
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <span class="code-sep">·</span>
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+        </div>
+        <div class="code-row">
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <span class="code-sep">·</span>
+          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+        </div>
+      </div>
+      <div class="import-modal-actions">
+        <button id="links-import-go">Import</button>
+        <button id="links-import-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Links share modal -->
+  <div class="import-modal" id="links-share-modal" style="display:none">
+    <div class="import-modal-box">
+      <div class="import-modal-title">Share Links</div>
+      <p class="import-modal-hint">Type this code on another device to import your links</p>
+      <div class="share-code-block">
+        <div class="share-code-label">Import code</div>
+        <div class="share-code" id="links-share-code">Creating…</div>
+      </div>
+      <div class="import-modal-actions">
+        <button id="links-copy-code" disabled>Copy Code</button>
+        <button id="links-share-close">Close</button>
+      </div>
+    </div>
   </div>
 
   <script src="js/icons.js"></script>

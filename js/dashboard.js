@@ -920,6 +920,137 @@
     body.appendChild(buildLinksGrid(links));
   }
 
+  // ── Links share / import ─────────────────────────────────────────────────
+
+  async function openLinksShareModal() {
+    const modal   = document.getElementById('links-share-modal');
+    const codeEl  = document.getElementById('links-share-code');
+    const copyBtn = document.getElementById('links-copy-code');
+
+    codeEl.textContent = 'Creating…';
+    copyBtn.disabled = true;
+    modal.style.display = 'flex';
+
+    try {
+      const id = crypto.randomUUID().replace(/-/g, '');
+      await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loadLinks()),
+      });
+      const parts = id.match(/.{8}/g);
+      codeEl.textContent = parts[0] + ' ' + parts[1] + '\n' + parts[2] + ' ' + parts[3];
+      copyBtn.disabled = false;
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(id).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = 'Copy Code'; }, 2000);
+        });
+      };
+    } catch {
+      codeEl.textContent = 'Failed — check connection';
+    }
+  }
+
+  function openLinksImportModal() {
+    const modal  = document.getElementById('links-import-modal');
+    const chunks = Array.from(modal.querySelectorAll('.code-chunk'));
+    chunks.forEach(c => c.value = '');
+    modal.style.display = 'flex';
+    chunks[0].focus();
+  }
+
+  function initLinksImportInputs() {
+    const modal  = document.getElementById('links-import-modal');
+    const chunks = Array.from(modal.querySelectorAll('.code-chunk'));
+
+    function getCode() { return chunks.map(c => c.value).join(''); }
+
+    function distributeCode(text, fromIndex) {
+      const clean = text.replace(/[^0-9a-f]/gi, '').toLowerCase();
+      const start = clean.length >= 32 ? 0 : fromIndex;
+      let offset = 0;
+      for (let i = start; i < chunks.length && offset < clean.length; i++) {
+        chunks[i].value = clean.slice(offset, offset + 8);
+        offset += 8;
+      }
+      const lastFilled = Math.min(start + Math.ceil(clean.length / 8) - 1, chunks.length - 1);
+      chunks[lastFilled].focus();
+      if (getCode().length >= 32) document.getElementById('links-import-go').click();
+    }
+
+    chunks.forEach((input, i) => {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9a-f]/gi, '').toLowerCase();
+        if (input.value.length === 8) {
+          if (i < chunks.length - 1) chunks[i + 1].focus();
+          else document.getElementById('links-import-go').click();
+        }
+      });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && input.value.length === 0 && i > 0) chunks[i - 1].focus();
+        if (e.key === 'Enter') document.getElementById('links-import-go').click();
+        if (e.key === 'Escape') document.getElementById('links-import-modal').style.display = 'none';
+      });
+      input.addEventListener('paste', e => {
+        e.preventDefault();
+        distributeCode((e.clipboardData || window.clipboardData).getData('text'), i);
+      });
+    });
+
+    document.getElementById('links-import-go').addEventListener('click', async () => {
+      const code = getCode();
+      if (code.length < 32) return;
+      const goBtn = document.getElementById('links-import-go');
+      goBtn.disabled = true;
+      goBtn.textContent = 'Importing…';
+      try {
+        const res = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + code);
+        if (!res.ok) throw new Error('Not found');
+        const imported = await res.json();
+        if (!Array.isArray(imported)) throw new Error('Invalid data');
+        const existing = loadLinks();
+        let merged;
+        if (existing.length > 0) {
+          const replace = confirm(
+            'Replace your existing ' + existing.length + ' link' + (existing.length !== 1 ? 's' : '') +
+            ' with the imported ' + imported.length + ' link' + (imported.length !== 1 ? 's' : '') + '?'
+          );
+          if (replace) {
+            merged = imported;
+          } else {
+            const existingUrls = new Set(existing.map(l => l.url));
+            merged = existing.concat(imported.filter(l => !existingUrls.has(l.url)));
+          }
+        } else {
+          merged = imported;
+        }
+        saveLinks(merged);
+        renderLinks();
+        document.getElementById('links-import-modal').style.display = 'none';
+      } catch {
+        alert('Import failed — check the code and your connection.');
+      } finally {
+        goBtn.disabled = false;
+        goBtn.textContent = 'Import';
+      }
+    });
+
+    document.getElementById('links-import-cancel').addEventListener('click', () => {
+      document.getElementById('links-import-modal').style.display = 'none';
+    });
+
+    document.getElementById('links-share-close').addEventListener('click', () => {
+      document.getElementById('links-share-modal').style.display = 'none';
+    });
+
+    ['links-share-modal', 'links-import-modal'].forEach(id => {
+      document.getElementById(id).addEventListener('click', e => {
+        if (e.target.id === id) document.getElementById(id).style.display = 'none';
+      });
+    });
+  }
+
   function initLinks() {
     renderLinks();
     document.getElementById('links-add-btn').addEventListener('click', () => {
@@ -929,6 +1060,11 @@
       editingLinkId = null;
       renderLinks();
     });
+    document.getElementById('links-share-btn').addEventListener('click', openLinksShareModal);
+    document.getElementById('links-import-btn').addEventListener('click', openLinksImportModal);
+    document.getElementById('links-share-btn').innerHTML = icon('upload', 14);
+    document.getElementById('links-import-btn').innerHTML = icon('download', 14);
+    initLinksImportInputs();
   }
 
   // ── Init ────────────────────────────────────────────────────────────────
