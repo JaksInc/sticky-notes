@@ -471,7 +471,7 @@ body { overflow-x: hidden; }
 }
 
 @media (max-width: 600px) {
-  .widget-grid { grid-template-columns: 1fr; }
+  .widget-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
   .widget-notes-body { max-height: none; }
 }
 

@@ -64,12 +64,13 @@
   function applyLayout(layout) {
     const mobile = isMobile();
     const maxCols = mobile ? 1 : window.innerWidth <= 900 ? 2 : GRID_COLS;
-    layout.forEach(entry => {
+    layout.forEach((entry, idx) => {
       const widget = document.querySelector('[data-widget-id="' + entry.id + '"]');
       if (!widget) return;
 
       if (entry.hidden && !editMode) {
         widget.style.display = 'none';
+        widget.style.order   = '';
         widget.classList.remove('layout-hidden');
         return;
       }
@@ -79,11 +80,13 @@
       if (mobile) {
         widget.style.gridColumn = '';
         widget.style.gridRow    = '';
+        widget.style.order      = idx;
       } else {
         const w = Math.min(entry.w, maxCols);
         const x = Math.min(entry.x, maxCols - w);
         widget.style.gridColumn = (x + 1) + ' / span ' + w;
         widget.style.gridRow    = (entry.y + 1) + ' / span ' + entry.h;
+        widget.style.order      = '';
       }
     });
   }
