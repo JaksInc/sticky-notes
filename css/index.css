@@ -270,6 +270,20 @@ body {
 }
 
 /* ── Import by code modal ── */
+.scan-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  box-sizing: border-box;
+}
+.scan-input:focus { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+.scan-input::placeholder { color: var(--color-text-muted); }
+
 .import-modal {
   position: fixed;
   inset: 0;

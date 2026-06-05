@@ -124,7 +124,8 @@
 
       <div class="sync-section">
         <div class="sync-section-label">Import — restore from another device</div>
-        <p class="import-modal-hint">Paste or type the 5-part code. This replaces all current data.</p>
+        <p class="import-modal-hint">Scan a QR code or paste a URL, or type the 5-part code manually</p>
+        <input class="scan-input" id="sync-import-scan" placeholder="Scan QR or paste URL / code…" autocomplete="off" spellcheck="false">
         <div class="code-inputs" id="sync-import-inputs">
           <div class="code-row">
             <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
@@ -155,7 +156,8 @@
   <div class="import-modal" id="links-import-modal" style="display:none">
     <div class="import-modal-box">
       <div class="import-modal-title">Import Links by Code</div>
-      <p class="import-modal-hint">Paste or type the 5-part code from the Share screen</p>
+      <p class="import-modal-hint">Scan a QR code or paste a URL, or type the 5-part code manually</p>
+      <input class="scan-input" id="links-import-scan" placeholder="Scan QR or paste URL / code…" autocomplete="off" spellcheck="false">
       <div class="code-inputs">
         <div class="code-row">
           <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
@@ -197,6 +199,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="js/icons.js"></script>
+  <script src="js/share-utils.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>

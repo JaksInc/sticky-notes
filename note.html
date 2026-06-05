@@ -58,6 +58,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   </div>
 
   <script src="js/icons.js"></script>
+  <script src="js/share-utils.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>
@@ -268,7 +269,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
     async function createShareBlob() {
       const id = crypto.randomUUID().replace(/-/g, '');
-      const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
+      const resp = await fetch(MANTLEDB + id, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: note.content, color: note.color })
@@ -305,9 +306,10 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
 
         try {
           const blobId = await createShareBlob();
-          const blobUrl = location.origin + location.pathname + '?gist=' + blobId;
-          const p = blobId.match(/.{8}/g);
-          document.getElementById('share-code').innerHTML = p[0] + ' ' + p[1] + '<br>' + p[2] + ' ' + p[3];
+          const code = uuidToCode(blobId);
+          const blobUrl = location.origin + location.pathname + '?gist=' + code;
+          const g = code.match(/.{5}/g);
+          document.getElementById('share-code').innerHTML = g[0] + ' ' + g[1] + ' ' + g[2] + '<br>' + g[3] + ' ' + g[4];
           document.getElementById('share-code').style.color = '';
           document.getElementById('share-url').value = blobUrl;
           document.getElementById('btn-copy-code').disabled = false;
@@ -345,7 +347,8 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       document.getElementById('color-bar').innerHTML =
         '<span class="import-banner">Loading shared note…</span>';
       try {
-        const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + blobId,
+        const uuid = blobId.length === 32 ? blobId : codeToUuid(blobId);
+        const resp = await fetch(MANTLEDB + uuid,
           { headers: { 'Accept': 'application/json' } });
         if (!resp.ok) throw new Error();
         initImportMode(await resp.json());

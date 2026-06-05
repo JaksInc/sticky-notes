@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  const MANTLEDB  = 'https://mantledb.sh/v2/sticky-notes-share/';
   const SYNC_KEYS = [
     'sticky-notes',
     'sticky-links',
@@ -10,17 +9,6 @@
     'sticky-pinned',
     'sticky-notes-view',
   ];
-
-  function uuidToCode(hex) {
-    return BigInt('0x' + hex).toString(36).toUpperCase().padStart(25, '0');
-  }
-
-  function codeToUuid(code) {
-    const s = code.replace(/\s/g, '').toLowerCase();
-    let n = 0n;
-    for (const ch of s) n = n * 36n + BigInt(parseInt(ch, 36));
-    return n.toString(16).padStart(32, '0');
-  }
 
   function gatherAll() {
     const bundle = { v: 1, exported: new Date().toISOString() };
@@ -105,7 +93,8 @@
     function getCode() { return chunks.map(c => c.value).join(''); }
 
     function distributeCode(text, fromIndex) {
-      const clean = text.replace(/[^0-9a-z]/gi, '').toLowerCase();
+      const result = extractShareCode(text);
+      const clean = result ? result.code.replace(/[^0-9a-z]/g, '') : text.replace(/[^0-9a-z]/gi, '').toLowerCase();
       const start = clean.length >= 25 ? 0 : fromIndex;
       let offset = 0;
       for (let i = start; i < chunks.length && offset < clean.length; i++) {
@@ -136,6 +125,24 @@
         distributeCode((e.clipboardData || window.clipboardData).getData('text'), i);
       });
     });
+
+    const syncScanInput = document.getElementById('sync-import-scan');
+    if (syncScanInput) {
+      syncScanInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          const result = extractShareCode(syncScanInput.value);
+          if (result) distributeCode(result.code, 0);
+        }
+        if (e.key === 'Escape') closeSyncModal();
+      });
+      syncScanInput.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        const result = extractShareCode(text);
+        if (result) { distributeCode(result.code, 0); return; }
+        syncScanInput.value = text;
+      });
+    }
 
     document.getElementById('sync-import-go').addEventListener('click', async () => {
       const code = getCode();
@@ -181,6 +188,8 @@
 
   function openSyncModal() {
     document.getElementById('sync-modal').style.display = 'flex';
+    const scanEl = document.getElementById('sync-import-scan');
+    if (scanEl) scanEl.value = '';
   }
 
   function closeSyncModal() {

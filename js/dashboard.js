@@ -922,17 +922,6 @@
 
   // ── Links share / import ─────────────────────────────────────────────────
 
-  function uuidToCode(hex) {
-    return BigInt('0x' + hex).toString(36).toUpperCase().padStart(25, '0');
-  }
-
-  function codeToUuid(code) {
-    const s = code.replace(/\s/g, '').toLowerCase();
-    let n = 0n;
-    for (const ch of s) n = n * 36n + BigInt(parseInt(ch, 36));
-    return n.toString(16).padStart(32, '0');
-  }
-
   async function openLinksShareModal() {
     const modal   = document.getElementById('links-share-modal');
     const codeEl  = document.getElementById('links-share-code');
@@ -946,7 +935,7 @@
 
     try {
       const id = crypto.randomUUID().replace(/-/g, '');
-      await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
+      await fetch(MANTLEDB + id, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loadLinks()),
@@ -976,8 +965,10 @@
     chunks.forEach(c => c.value = '');
     const errEl = document.getElementById('links-import-error');
     if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+    const scanEl = document.getElementById('links-import-scan');
+    if (scanEl) scanEl.value = '';
     modal.style.display = 'flex';
-    chunks[0].focus();
+    (scanEl || chunks[0]).focus();
   }
 
   function initLinksImportInputs() {
@@ -997,7 +988,8 @@
     }
 
     function distributeCode(text, fromIndex) {
-      const clean = text.replace(/[^0-9a-z]/gi, '').toLowerCase();
+      const result = extractShareCode(text);
+      const clean = result ? result.code.replace(/[^0-9a-z]/g, '') : text.replace(/[^0-9a-z]/gi, '').toLowerCase();
       const start = clean.length >= 25 ? 0 : fromIndex;
       let offset = 0;
       for (let i = start; i < chunks.length && offset < clean.length; i++) {
@@ -1037,7 +1029,7 @@
       goBtn.textContent = 'Importing…';
       try {
         const uuid = codeToUuid(code);
-        const res = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + uuid);
+        const res = await fetch(MANTLEDB + uuid);
         if (!res.ok) throw new Error('Not found');
         const imported = await res.json();
         if (!Array.isArray(imported)) throw new Error('Invalid data');
@@ -1071,6 +1063,24 @@
     document.getElementById('links-import-cancel').addEventListener('click', () => {
       document.getElementById('links-import-modal').style.display = 'none';
     });
+
+    const linksScanInput = document.getElementById('links-import-scan');
+    if (linksScanInput) {
+      linksScanInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          const result = extractShareCode(linksScanInput.value);
+          if (result) distributeCode(result.code, 0);
+        }
+        if (e.key === 'Escape') document.getElementById('links-import-modal').style.display = 'none';
+      });
+      linksScanInput.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        const result = extractShareCode(text);
+        if (result) { distributeCode(result.code, 0); return; }
+        linksScanInput.value = text;
+      });
+    }
 
     document.getElementById('links-share-close').addEventListener('click', () => {
       document.getElementById('links-share-modal').style.display = 'none';

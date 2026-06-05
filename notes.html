@@ -35,17 +35,20 @@
   <div class="import-modal" id="import-modal" style="display:none">
     <div class="import-modal-box">
       <div class="import-modal-title">Import Note by Code</div>
-      <p class="import-modal-hint">Paste or type the 4-part code from the Share screen</p>
+      <p class="import-modal-hint">Scan a QR code or paste a URL, or type the 5-part code manually</p>
+      <input class="scan-input" id="import-scan" placeholder="Scan QR or paste URL / code…" autocomplete="off" spellcheck="false">
       <div class="code-inputs">
         <div class="code-row">
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
           <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
+          <span class="code-sep">·</span>
+          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
         </div>
         <div class="code-row">
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
           <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
+          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
         </div>
       </div>
       <div class="import-modal-actions">
@@ -63,6 +66,7 @@
   </div>
 
   <script src="js/icons.js"></script>
+  <script src="js/share-utils.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>
@@ -234,22 +238,23 @@
     }
 
     function distributeCode(text, fromIndex) {
-      const clean = text.replace(/[^0-9a-f]/gi, '').toLowerCase();
-      const start = clean.length >= 32 ? 0 : fromIndex;
+      const result = extractShareCode(text);
+      const clean = result ? result.code.replace(/[^0-9a-z]/g, '') : text.replace(/[^0-9a-z]/gi, '').toLowerCase();
+      const start = clean.length >= 25 ? 0 : fromIndex;
       let offset = 0;
       for (let i = start; i < codeChunks.length && offset < clean.length; i++) {
-        codeChunks[i].value = clean.slice(offset, offset + 8);
-        offset += 8;
+        codeChunks[i].value = clean.slice(offset, offset + 5);
+        offset += 5;
       }
-      const lastFilled = Math.min(start + Math.ceil(clean.length / 8) - 1, codeChunks.length - 1);
+      const lastFilled = Math.min(start + Math.ceil(clean.length / 5) - 1, codeChunks.length - 1);
       codeChunks[lastFilled].focus();
-      if (getImportCode().length >= 32) document.getElementById('btn-import-go').click();
+      if (getImportCode().length >= 25) document.getElementById('btn-import-go').click();
     }
 
     codeChunks.forEach((input, i) => {
       input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^0-9a-f]/gi, '').toLowerCase();
-        if (input.value.length === 8) {
+        input.value = input.value.replace(/[^0-9a-z]/gi, '').toLowerCase();
+        if (input.value.length === 5) {
           if (i < codeChunks.length - 1) codeChunks[i + 1].focus();
           else document.getElementById('btn-import-go').click();
         }
@@ -265,16 +270,38 @@
       });
     });
 
+    function triggerNoteImport(code) {
+      if (code.length === 25 || code.length === 32)
+        location.href = 'note.html?gist=' + encodeURIComponent(code);
+    }
+
+    const scanInput = document.getElementById('import-scan');
+    scanInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const result = extractShareCode(scanInput.value);
+        if (result) triggerNoteImport(result.code);
+      }
+      if (e.key === 'Escape') document.getElementById('import-modal').style.display = 'none';
+    });
+    scanInput.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const result = extractShareCode(text);
+      if (result) { triggerNoteImport(result.code); return; }
+      scanInput.value = text;
+    });
+
     document.getElementById('btn-import-code').addEventListener('click', () => {
       codeChunks.forEach(c => c.value = '');
+      scanInput.value = '';
       document.getElementById('import-modal').style.display = 'flex';
-      codeChunks[0].focus();
+      scanInput.focus();
     });
 
     document.getElementById('btn-import-go').addEventListener('click', () => {
       const code = getImportCode().replace(/\s/g, '');
-      if (code.length < 32) return;
-      location.href = 'note.html?gist=' + encodeURIComponent(code);
+      if (code.length < 25) return;
+      triggerNoteImport(code);
     });
 
     document.getElementById('btn-import-cancel').addEventListener('click', () => {
