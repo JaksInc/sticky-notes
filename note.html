@@ -16,7 +16,6 @@
   <meta name="apple-mobile-web-app-title" content="Quarterboard">
   <meta name="theme-color" content="#f96302">
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/note.css">
 </head>
 <body>
@@ -43,7 +42,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   <div class="share-modal" id="share-modal" style="display:none">
     <div class="share-modal-box">
       <div class="share-modal-title">Share Note</div>
-      <div id="share-qr"></div>
+      <div class="share-barcode-wrap"><svg id="share-barcode" style="display:none"></svg></div>
       <div class="share-code-block">
         <div class="share-code-label">Import code</div>
         <div class="share-code" id="share-code">Creating…</div>
@@ -291,17 +290,12 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       document.getElementById('btn-share').innerHTML = icon('share', 14) + ' Share';
 
       document.getElementById('btn-share').addEventListener('click', async () => {
-        const baseUrl = buildBase64Url();
-        document.getElementById('share-url').value = baseUrl;
-        document.getElementById('share-qr').innerHTML = '';
-        new QRCode(document.getElementById('share-qr'), {
-          text: baseUrl, width: 180, height: 180,
-          colorDark: '#000000', colorLight: '#ffffff',
-        });
-        document.getElementById('btn-copy-link').disabled = false;
+        document.getElementById('btn-copy-link').disabled = true;
         document.getElementById('btn-copy-code').disabled = true;
         document.getElementById('share-code').textContent = 'Generating…';
         document.getElementById('share-code').style.color = '';
+        document.getElementById('share-url').value = '';
+        document.getElementById('share-barcode').style.display = 'none';
         document.getElementById('share-modal').style.display = 'flex';
 
         try {
@@ -313,11 +307,9 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
           document.getElementById('share-code').style.color = '';
           document.getElementById('share-url').value = blobUrl;
           document.getElementById('btn-copy-code').disabled = false;
-          document.getElementById('share-qr').innerHTML = '';
-          new QRCode(document.getElementById('share-qr'), {
-            text: blobUrl, width: 180, height: 180,
-            colorDark: '#000000', colorLight: '#ffffff',
-          });
+          document.getElementById('btn-copy-link').disabled = false;
+          document.getElementById('share-barcode').style.display = '';
+          JsBarcode('#share-barcode', code, { format: 'CODE128', width: 1, height: 70, displayValue: false, margin: 5 });
         } catch {
           document.getElementById('share-code').textContent = 'Code unavailable';
           document.getElementById('share-code').style.color = '#999';

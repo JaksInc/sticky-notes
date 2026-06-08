@@ -276,6 +276,17 @@
     }
 
     const scanInput = document.getElementById('import-scan');
+    let scanAutoTimer;
+    scanInput.addEventListener('input', () => {
+      clearTimeout(scanAutoTimer);
+      const val = scanInput.value;
+      if (val.length >= 25) {
+        scanAutoTimer = setTimeout(() => {
+          const result = extractShareCode(val);
+          if (result) triggerNoteImport(result.code);
+        }, 50);
+      }
+    });
     scanInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const result = extractShareCode(scanInput.value);

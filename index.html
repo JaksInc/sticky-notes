@@ -113,7 +113,7 @@
           <div class="share-code-label">Sync code</div>
           <div class="share-code" id="sync-share-code">—</div>
         </div>
-        <div id="sync-qr" style="display:flex;justify-content:center;padding:4px 0"></div>
+        <div class="share-barcode-wrap"><svg id="sync-barcode" style="display:none"></svg></div>
         <div class="import-modal-actions">
           <button id="sync-gen-btn">Generate Code</button>
           <button id="sync-copy-btn" disabled>Copy Code</button>
@@ -189,7 +189,7 @@
         <div class="share-code-label">Import code</div>
         <div class="share-code" id="links-share-code">Creating…</div>
       </div>
-      <div id="links-qr" style="display:flex;justify-content:center;padding:8px 0 4px"></div>
+      <div class="share-barcode-wrap"><svg id="links-barcode" style="display:none"></svg></div>
       <div class="import-modal-actions">
         <button id="links-copy-code" disabled>Copy Code</button>
         <button id="links-share-close">Close</button>
@@ -197,7 +197,7 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="js/icons.js"></script>
   <script src="js/share-utils.js"></script>
   <script src="js/storage.js"></script>

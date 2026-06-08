@@ -35,14 +35,14 @@
   async function generateSyncCode() {
     const codeEl  = document.getElementById('sync-share-code');
     const copyBtn = document.getElementById('sync-copy-btn');
-    const qrEl    = document.getElementById('sync-qr');
     const genBtn  = document.getElementById('sync-gen-btn');
 
     genBtn.disabled = true;
     genBtn.textContent = 'Generating…';
     codeEl.textContent = '…';
     copyBtn.disabled = true;
-    if (qrEl) qrEl.innerHTML = '';
+    const barcodeEl = document.getElementById('sync-barcode');
+    if (barcodeEl) barcodeEl.style.display = 'none';
 
     try {
       const id = crypto.randomUUID().replace(/-/g, '');
@@ -61,10 +61,10 @@
           setTimeout(() => { copyBtn.textContent = 'Copy Code'; }, 2000);
         });
       };
-      if (qrEl && typeof QRCode !== 'undefined') {
-        const url = location.origin + location.pathname + '?sync-import=' + code;
-        new QRCode(qrEl, { text: url, width: 160, height: 160,
-          colorDark: '#000000', colorLight: '#ffffff' });
+      const barcodeEl = document.getElementById('sync-barcode');
+      if (barcodeEl) {
+        barcodeEl.style.display = '';
+        JsBarcode('#sync-barcode', code, { format: 'CODE128', width: 1, height: 70, displayValue: false, margin: 5 });
       }
     } catch {
       codeEl.textContent = 'Failed — check connection';
@@ -128,6 +128,17 @@
 
     const syncScanInput = document.getElementById('sync-import-scan');
     if (syncScanInput) {
+      let syncScanTimer;
+      syncScanInput.addEventListener('input', () => {
+        clearTimeout(syncScanTimer);
+        const val = syncScanInput.value;
+        if (val.length >= 25) {
+          syncScanTimer = setTimeout(() => {
+            const result = extractShareCode(val);
+            if (result) distributeCode(result.code, 0);
+          }, 50);
+        }
+      });
       syncScanInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           const result = extractShareCode(syncScanInput.value);

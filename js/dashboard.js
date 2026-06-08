@@ -926,11 +926,10 @@
     const modal   = document.getElementById('links-share-modal');
     const codeEl  = document.getElementById('links-share-code');
     const copyBtn = document.getElementById('links-copy-code');
-    const qrEl    = document.getElementById('links-qr');
-
     codeEl.textContent = 'Creating…';
     copyBtn.disabled = true;
-    if (qrEl) qrEl.innerHTML = '';
+    const barcodeEl = document.getElementById('links-barcode');
+    if (barcodeEl) barcodeEl.style.display = 'none';
     modal.style.display = 'flex';
 
     try {
@@ -950,9 +949,10 @@
           setTimeout(() => { copyBtn.textContent = 'Copy Code'; }, 2000);
         });
       };
-      if (qrEl && typeof QRCode !== 'undefined') {
-        const importUrl = location.origin + location.pathname + '?import-links=' + code;
-        new QRCode(qrEl, { text: importUrl, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff' });
+      const barcodeEl = document.getElementById('links-barcode');
+      if (barcodeEl) {
+        barcodeEl.style.display = '';
+        JsBarcode('#links-barcode', code, { format: 'CODE128', width: 1, height: 70, displayValue: false, margin: 5 });
       }
     } catch {
       codeEl.textContent = 'Failed — check connection';
@@ -1066,6 +1066,17 @@
 
     const linksScanInput = document.getElementById('links-import-scan');
     if (linksScanInput) {
+      let linksScanTimer;
+      linksScanInput.addEventListener('input', () => {
+        clearTimeout(linksScanTimer);
+        const val = linksScanInput.value;
+        if (val.length >= 25) {
+          linksScanTimer = setTimeout(() => {
+            const result = extractShareCode(val);
+            if (result) distributeCode(result.code, 0);
+          }, 50);
+        }
+      });
       linksScanInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           const result = extractShareCode(linksScanInput.value);
