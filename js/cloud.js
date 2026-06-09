@@ -163,6 +163,33 @@
     el.style.color = isError ? 'var(--color-danger)' : '';
   }
 
+  function relativeTime(tsMs) {
+    if (!tsMs) return 'never';
+    var diff = Math.floor((Date.now() - tsMs) / 1000);
+    if (diff < 10)  return 'just now';
+    if (diff < 60)  return diff + ' seconds ago';
+    var mins = Math.floor(diff / 60);
+    if (mins < 60)  return mins === 1 ? '1 minute ago' : mins + ' minutes ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24)   return hrs === 1 ? '1 hour ago' : hrs + ' hours ago';
+    var days = Math.floor(hrs / 24);
+    return days === 1 ? '1 day ago' : days + ' days ago';
+  }
+
+  function populateSyncInfo() {
+    var ts = Number(localStorage.getItem(LAST_SYNC_KEY) || 0);
+    var lastSyncedEl = document.getElementById('auth-last-synced');
+    if (lastSyncedEl) lastSyncedEl.textContent = relativeTime(ts || null);
+
+    var statusEl = document.getElementById('auth-sync-status-text');
+    if (statusEl) {
+      var btn = document.getElementById('btn-cloud');
+      var cloudStatusEl = btn && btn.querySelector('.cloud-status');
+      var statusText = cloudStatusEl ? cloudStatusEl.textContent.trim() : '';
+      statusEl.textContent = statusText || (auth.currentUser ? 'Synced' : 'not connected');
+    }
+  }
+
   function escHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -189,6 +216,7 @@
     if (titleEl) titleEl.textContent = 'Signed In';
     var nameEl = document.getElementById('auth-user-email');
     if (nameEl) nameEl.textContent = username;
+    populateSyncInfo();
   }
 
   function showLoggedOut() {
@@ -211,8 +239,17 @@
 
   document.getElementById('btn-cloud').addEventListener('click', function () {
     document.getElementById('auth-modal').style.display = 'flex';
-    document.getElementById('auth-username').focus();
+    if (auth.currentUser) {
+      populateSyncInfo();
+    } else {
+      document.getElementById('auth-username').focus();
+    }
     clearAuthError();
+  });
+
+  document.getElementById('auth-sync-now').addEventListener('click', function () {
+    clearTimeout(pushTimer);
+    pushToCloud();
   });
 
   function closeAuthModal() {

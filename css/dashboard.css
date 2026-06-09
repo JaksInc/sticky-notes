@@ -748,3 +748,30 @@ body { overflow-x: hidden; }
 [data-theme="dark"] #auth-cancel,
 [data-theme="dark"] #auth-toggle,
 [data-theme="dark"] #auth-close { background: rgba(255,255,255,.1); }
+.auth-sync-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: rgba(0,0,0,.04);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+[data-theme="dark"] .auth-sync-info { background: rgba(255,255,255,.06); }
+.auth-sync-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+}
+.auth-sync-label {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.auth-sync-value {
+  color: var(--color-text);
+  font-weight: 500;
+}
+#auth-sync-now { background: rgba(0,0,0,.08); color: var(--color-text); }
+#auth-sync-now:hover { background: rgba(0,0,0,.14); }
+[data-theme="dark"] #auth-sync-now { background: rgba(255,255,255,.1); }
