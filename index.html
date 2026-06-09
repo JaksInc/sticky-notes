@@ -123,7 +123,18 @@
       <div id="auth-signed-in-section" style="display:none">
         <p class="import-modal-hint">Syncing automatically</p>
         <div id="auth-user-email" class="auth-username-display"></div>
+        <div class="auth-sync-info">
+          <div class="auth-sync-row">
+            <span class="auth-sync-label">Last synced:</span>
+            <span class="auth-sync-value" id="auth-last-synced">—</span>
+          </div>
+          <div class="auth-sync-row">
+            <span class="auth-sync-label">Status:</span>
+            <span class="auth-sync-value" id="auth-sync-status-text">—</span>
+          </div>
+        </div>
         <div class="import-modal-actions">
+          <button id="auth-sync-now">Sync Now</button>
           <button id="auth-signout">Sign Out</button>
           <button id="auth-close">Close</button>
         </div>
