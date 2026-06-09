@@ -1,11 +1,9 @@
-// Replace these placeholder values with your Firebase project config.
-// Firebase Console → Project Settings → Your apps → SDK setup → Config
 window.FB_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID",
+  apiKey:            "AIzaSyDSaEBLEBONw4fmHTjQDmFM61YVt2AxW4w",
+  authDomain:        "quarterboard-837e8.firebaseapp.com",
+  projectId:         "quarterboard-837e8",
+  storageBucket:     "quarterboard-837e8.firebasestorage.app",
+  messagingSenderId: "90647793628",
+  appId:             "1:90647793628:web:c5ea0826a467907f580919",
   registrationCode:  "YOUR_REGISTRATION_CODE"
 };
