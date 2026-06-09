@@ -293,19 +293,19 @@
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
           const n = getNote(pinnedId);
-          if (n) { n.content = ta.value; saveNote(n); }
+          if (n) { n.content = ta.value; saveNote(n); window.cloudSync?.('sticky-notes'); }
         }, 300);
       });
       ta.addEventListener('blur', () => {
         const n = getNote(pinnedId);
-        if (n) { n.content = ta.value; saveNote(n); }
+        if (n) { n.content = ta.value; saveNote(n); window.cloudSync?.('sticky-notes'); }
         memoIsEditing = false;
         renderMemo();
       });
       ta.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
           const n = getNote(pinnedId);
-          if (n) { n.content = ta.value; saveNote(n); }
+          if (n) { n.content = ta.value; saveNote(n); window.cloudSync?.('sticky-notes'); }
           memoIsEditing = false;
           renderMemo();
         }
