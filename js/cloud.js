@@ -167,13 +167,19 @@
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Username ↔ Firebase email mapping (Firebase requires email format internally)
+  var FAKE_DOMAIN = '@qb.internal';
+  function toFakeEmail(username) { return username.toLowerCase().trim() + FAKE_DOMAIN; }
+  function fromFakeEmail(email)  { return (email || '').replace(FAKE_DOMAIN, ''); }
+
   function showLoggedIn(email) {
+    var username = fromFakeEmail(email);
     var btn = document.getElementById('btn-cloud');
     if (btn) {
       btn.innerHTML = icon('user', 15) +
-        '<span class="btn-label cloud-user-email">' + escHtml(email.split('@')[0]) + '</span>' +
+        '<span class="btn-label cloud-user-email">' + escHtml(username) + '</span>' +
         '<span class="cloud-status"></span>';
-      btn.title = 'Cloud sync — ' + email;
+      btn.title = 'Cloud sync — ' + username;
     }
     var formSection = document.getElementById('auth-form-section');
     var signedInSection = document.getElementById('auth-signed-in-section');
@@ -181,8 +187,8 @@
     if (formSection) formSection.style.display = 'none';
     if (signedInSection) signedInSection.style.display = '';
     if (titleEl) titleEl.textContent = 'Signed In';
-    var emailEl = document.getElementById('auth-user-email');
-    if (emailEl) emailEl.textContent = email;
+    var nameEl = document.getElementById('auth-user-email');
+    if (nameEl) nameEl.textContent = username;
   }
 
   function showLoggedOut() {
@@ -205,16 +211,22 @@
 
   document.getElementById('btn-cloud').addEventListener('click', function () {
     document.getElementById('auth-modal').style.display = 'flex';
-    var emailEl = document.getElementById('auth-email');
-    if (emailEl) emailEl.focus();
+    document.getElementById('auth-username').focus();
     clearAuthError();
   });
 
   function closeAuthModal() {
     document.getElementById('auth-modal').style.display = 'none';
-    var pw = document.getElementById('auth-password');
-    if (pw) pw.value = '';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('auth-regcode').value  = '';
     clearAuthError();
+    if (isSignUp) {
+      isSignUp = false;
+      document.getElementById('auth-title').textContent  = 'Sign In';
+      document.getElementById('auth-submit').textContent = 'Sign In';
+      document.getElementById('auth-toggle').textContent = 'Create Account';
+      document.getElementById('auth-regcode').style.display = 'none';
+    }
   }
 
   document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
@@ -225,28 +237,42 @@
 
   document.getElementById('auth-toggle').addEventListener('click', function () {
     isSignUp = !isSignUp;
-    var title  = document.getElementById('auth-title');
-    var submit = document.getElementById('auth-submit');
-    var toggle = document.getElementById('auth-toggle');
-    title.textContent  = isSignUp ? 'Create Account' : 'Sign In';
-    submit.textContent = isSignUp ? 'Create Account' : 'Sign In';
-    toggle.textContent = isSignUp ? 'Back to Sign In' : 'Create Account';
+    document.getElementById('auth-title').textContent  = isSignUp ? 'Create Account' : 'Sign In';
+    document.getElementById('auth-submit').textContent = isSignUp ? 'Create Account' : 'Sign In';
+    document.getElementById('auth-toggle').textContent = isSignUp ? 'Back to Sign In' : 'Create Account';
+    document.getElementById('auth-regcode').style.display = isSignUp ? '' : 'none';
+    document.getElementById('auth-regcode').value = '';
     clearAuthError();
   });
 
   document.getElementById('auth-submit').addEventListener('click', async function () {
-    var email    = document.getElementById('auth-email').value.trim();
+    var username = document.getElementById('auth-username').value.trim();
     var password = document.getElementById('auth-password').value;
-    if (!email || !password) return;
+    var regcode  = document.getElementById('auth-regcode').value;
+
+    if (!username || !password) return;
+    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      showAuthError('Username may only contain letters, numbers, dots, hyphens, and underscores.');
+      return;
+    }
+    if (isSignUp) {
+      var expected = window.FB_CONFIG && window.FB_CONFIG.registrationCode;
+      if (!expected || regcode !== expected) {
+        showAuthError('Incorrect registration code.');
+        return;
+      }
+    }
+
     var btn = document.getElementById('auth-submit');
     btn.disabled = true;
     btn.textContent = isSignUp ? 'Creating…' : 'Signing in…';
     clearAuthError();
     try {
+      var fakeEmail = toFakeEmail(username);
       if (isSignUp) {
-        await auth.createUserWithEmailAndPassword(email, password);
+        await auth.createUserWithEmailAndPassword(fakeEmail, password);
       } else {
-        await auth.signInWithEmailAndPassword(email, password);
+        await auth.signInWithEmailAndPassword(fakeEmail, password);
       }
       closeAuthModal();
     } catch (err) {
@@ -262,7 +288,7 @@
     closeAuthModal();
   });
 
-  ['auth-email', 'auth-password'].forEach(function (id) {
+  ['auth-username', 'auth-password', 'auth-regcode'].forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('keydown', function (e) {
@@ -283,12 +309,12 @@
 
   function friendlyAuthError(code) {
     var map = {
-      'auth/user-not-found':         'No account with that email.',
+      'auth/user-not-found':         'Username not found.',
       'auth/wrong-password':         'Incorrect password.',
-      'auth/invalid-credential':     'Incorrect email or password.',
-      'auth/email-already-in-use':   'An account with that email already exists.',
+      'auth/invalid-credential':     'Incorrect username or password.',
+      'auth/email-already-in-use':   'That username is already taken.',
       'auth/weak-password':          'Password must be at least 6 characters.',
-      'auth/invalid-email':          'Please enter a valid email address.',
+      'auth/invalid-email':          'Invalid username.',
       'auth/too-many-requests':      'Too many attempts. Try again later.',
       'auth/network-request-failed': 'Network error — check your connection.',
     };
