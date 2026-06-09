@@ -17,11 +17,15 @@
   <meta name="theme-color" content="#f96302">
   <link rel="stylesheet" href="css/index.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="toolbar">
     <h1>Dashboard</h1>
     <button class="btn btn-secondary" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode"></button>
+    <button class="btn btn-secondary" id="btn-cloud" title="Sign in to sync across devices"><span data-icon="user"></span><span class="btn-label"> Sign In</span></button>
     <button class="btn btn-secondary" id="btn-sync" title="Sync everything"><span data-icon="refresh"></span><span class="btn-label"> Sync</span></button>
     <button class="btn btn-secondary" id="btn-edit-layout" title="Edit layout"><span data-icon="grid"></span> <span class="btn-label">Layout</span></button>
     <button class="btn btn-secondary" id="btn-popout" title="Open in popup window"><span data-icon="popout"></span> Pop Out</button>
@@ -197,6 +201,34 @@
     </div>
   </div>
 
+  <!-- Cloud auth modal -->
+  <div class="import-modal" id="auth-modal" style="display:none">
+    <div class="import-modal-box auth-box">
+      <div class="import-modal-title" id="auth-title">Sign In</div>
+
+      <div id="auth-form-section">
+        <p class="import-modal-hint">Sync your notes across devices</p>
+        <input class="scan-input" id="auth-email" type="email" placeholder="Email" autocomplete="email">
+        <input class="scan-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
+        <div class="auth-error" id="auth-error" style="display:none"></div>
+        <div class="import-modal-actions">
+          <button id="auth-submit">Sign In</button>
+          <button id="auth-toggle">Create Account</button>
+          <button id="auth-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div id="auth-signed-in-section" style="display:none">
+        <p class="import-modal-hint">Syncing automatically</p>
+        <div id="auth-user-email" class="auth-email-display"></div>
+        <div class="import-modal-actions">
+          <button id="auth-signout">Sign Out</button>
+          <button id="auth-close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="js/icons.js"></script>
   <script src="js/share-utils.js"></script>
@@ -211,5 +243,7 @@
       el.innerHTML = icon(el.dataset.icon, parseInt(el.dataset.size) || 15);
     });
   </script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
 </body>
 </html>

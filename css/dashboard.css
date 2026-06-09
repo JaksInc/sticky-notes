@@ -769,3 +769,41 @@ body { overflow-x: hidden; }
 .layout-mobile-btn:hover:not(:disabled) { color: var(--color-primary); background: var(--color-primary-light); }
 .layout-mobile-btn:disabled { opacity: .3; cursor: default; }
 .layout-mobile-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ── Cloud auth ── */
+.auth-box { max-width: 360px; }
+#auth-form-section, #auth-signed-in-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.auth-error {
+  color: var(--color-danger);
+  font-size: 13px;
+}
+.auth-email-display {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  word-break: break-all;
+}
+.cloud-status { font-size: 11px; }
+.cloud-user-email {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+#auth-submit { background: var(--color-primary); color: #fff; }
+#auth-submit:hover:not(:disabled) { opacity: .88; }
+#auth-submit:disabled { opacity: .5; cursor: default; }
+#auth-cancel, #auth-toggle, #auth-close { background: rgba(0,0,0,.08); color: var(--color-text); }
+#auth-cancel:hover, #auth-toggle:hover, #auth-close:hover { background: rgba(0,0,0,.14); }
+#auth-signout { background: var(--color-primary); color: #fff; }
+#auth-signout:hover { opacity: .88; }
+[data-theme="dark"] #auth-cancel,
+[data-theme="dark"] #auth-toggle,
+[data-theme="dark"] #auth-close { background: rgba(255,255,255,.1); }
