@@ -624,64 +624,6 @@ body { overflow-x: hidden; }
 }
 #btn-edit-layout.active { background: var(--color-primary); color: #fff; }
 
-/* ── Links share / import modal button overrides ── */
-#links-import-go  { background: var(--color-primary); color: #fff; }
-#links-import-go:hover  { opacity: .88; }
-#links-import-cancel { background: rgba(0,0,0,.08); color: var(--color-text); }
-#links-import-cancel:hover { background: rgba(0,0,0,.14); }
-#links-copy-code  { background: var(--color-primary); color: #fff; }
-#links-copy-code:hover:not(:disabled) { opacity: .88; }
-#links-copy-code:disabled { opacity: .45; cursor: default; }
-#links-share-close { background: rgba(0,0,0,.08); color: var(--color-text); }
-#links-share-close:hover { background: rgba(0,0,0,.14); }
-
-/* Share code display (mirrors note.css .share-code-block / .share-code) */
-.share-code-block {
-  width: 100%;
-  text-align: center;
-}
-.share-code-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  color: var(--color-text-muted);
-  margin-bottom: 4px;
-}
-.share-code {
-  font-family: monospace;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: 1px;
-  text-align: center;
-  line-height: 1.8;
-  padding: 10px 14px;
-  background: var(--color-bg);
-  border-radius: var(--radius-md);
-  white-space: pre;
-}
-
-.sync-section { display: flex; flex-direction: column; gap: 8px; }
-.sync-section-label {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  color: var(--color-text-muted);
-}
-.sync-divider {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 8px 0;
-}
-
-.import-error {
-  color: var(--color-danger, #c0392b);
-  font-size: 13px;
-  text-align: center;
-  padding: 6px 0 2px;
-}
-
 /* Hidden widget (shown dimmed in edit mode, gone in normal mode) */
 .layout-hidden { opacity: .4; }
 .layout-hidden .widget-body { visibility: hidden; }
