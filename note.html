@@ -16,14 +16,12 @@
   <meta name="apple-mobile-web-app-title" content="Quarterboard">
   <meta name="theme-color" content="#f96302">
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/note.css">
 </head>
 <body>
   <div class="color-bar" id="color-bar">
     <a class="back-btn" id="btn-back" href="notes.html" style="display:none"></a>
     <button class="pin-btn" id="btn-pin" style="display:none">Pin</button>
-    <button class="share-btn" id="btn-share" style="display:none"></button>
     <button class="btn-secondary save-btn" id="btn-save" style="display:none">Save</button>
     <button class="pin-btn" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode" style="margin-left:auto"></button>
   </div>
@@ -38,24 +36,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
   </div>
 
   <div class="status-bar" id="status-bar"></div>
-
-  <!-- Share modal -->
-  <div class="share-modal" id="share-modal" style="display:none">
-    <div class="share-modal-box">
-      <div class="share-modal-title">Share Note</div>
-      <div id="share-qr"></div>
-      <div class="share-code-block">
-        <div class="share-code-label">Import code</div>
-        <div class="share-code" id="share-code">Creating…</div>
-      </div>
-      <input class="share-url-input" id="share-url" readonly placeholder="Creating link…">
-      <div class="share-modal-actions">
-        <button id="btn-copy-code" disabled>Copy Code</button>
-        <button id="btn-copy-link" disabled>Copy Link</button>
-        <button id="btn-close-share">Close</button>
-      </div>
-    </div>
-  </div>
 
   <script src="js/icons.js"></script>
   <script src="js/storage.js"></script>
@@ -221,7 +201,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       if (!isInEditMode) return;
       isInEditMode = false;
       document.getElementById('btn-save').style.display = 'none';
-      document.getElementById('btn-share').style.display = '';
       document.getElementById('btn-pin').style.display = '';
       updatePinBtnState();
 
@@ -237,7 +216,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       if (isInEditMode) return;
       isInEditMode = true;
       document.getElementById('btn-save').style.display = '';
-      document.getElementById('btn-share').style.display = 'none';
       document.getElementById('btn-pin').style.display = 'none';
 
       const viewEl = document.getElementById('view-render');
@@ -259,149 +237,7 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
       }, 300);
     }
 
-    function buildBase64Url() {
-      const payload = btoa(unescape(encodeURIComponent(
-        JSON.stringify({ content: note.content, color: note.color })
-      )));
-      return location.origin + location.pathname + '?import=' + encodeURIComponent(payload);
-    }
-
-    async function createShareBlob() {
-      const id = crypto.randomUUID().replace(/-/g, '');
-      const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + id, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: note.content, color: note.color })
-      });
-      if (!resp.ok) throw new Error(resp.status);
-      return id;
-    }
-
-    function closeShareModal() {
-      document.getElementById('share-modal').style.display = 'none';
-      document.getElementById('btn-copy-code').textContent = 'Copy Code';
-      document.getElementById('btn-copy-link').textContent = 'Copy Link';
-      document.getElementById('btn-copy-code').disabled = true;
-      document.getElementById('btn-copy-link').disabled = true;
-      document.getElementById('share-code').style.color = '';
-    }
-
-    function initShareHandlers() {
-      document.getElementById('btn-share').innerHTML = icon('share', 14) + ' Share';
-
-      document.getElementById('btn-share').addEventListener('click', async () => {
-        const baseUrl = buildBase64Url();
-        document.getElementById('share-url').value = baseUrl;
-        document.getElementById('share-qr').innerHTML = '';
-        new QRCode(document.getElementById('share-qr'), {
-          text: baseUrl, width: 180, height: 180,
-          colorDark: '#000000', colorLight: '#ffffff',
-        });
-        document.getElementById('btn-copy-link').disabled = false;
-        document.getElementById('btn-copy-code').disabled = true;
-        document.getElementById('share-code').textContent = 'Generating…';
-        document.getElementById('share-code').style.color = '';
-        document.getElementById('share-modal').style.display = 'flex';
-
-        try {
-          const blobId = await createShareBlob();
-          const blobUrl = location.origin + location.pathname + '?gist=' + blobId;
-          const p = blobId.match(/.{8}/g);
-          document.getElementById('share-code').innerHTML = p[0] + ' ' + p[1] + '<br>' + p[2] + ' ' + p[3];
-          document.getElementById('share-code').style.color = '';
-          document.getElementById('share-url').value = blobUrl;
-          document.getElementById('btn-copy-code').disabled = false;
-          document.getElementById('share-qr').innerHTML = '';
-          new QRCode(document.getElementById('share-qr'), {
-            text: blobUrl, width: 180, height: 180,
-            colorDark: '#000000', colorLight: '#ffffff',
-          });
-        } catch {
-          document.getElementById('share-code').textContent = 'Code unavailable';
-          document.getElementById('share-code').style.color = '#999';
-        }
-      });
-
-      document.getElementById('btn-copy-code').addEventListener('click', () => {
-        const code = document.getElementById('share-code').textContent.replace(/\s/g, '');
-        navigator.clipboard.writeText(code)
-          .then(() => { document.getElementById('btn-copy-code').textContent = 'Copied!'; })
-          .catch(() => {});
-      });
-
-      document.getElementById('btn-copy-link').addEventListener('click', () => {
-        navigator.clipboard.writeText(document.getElementById('share-url').value)
-          .then(() => { document.getElementById('btn-copy-link').textContent = 'Copied!'; })
-          .catch(() => { document.getElementById('share-url').select(); });
-      });
-
-      document.getElementById('btn-close-share').addEventListener('click', closeShareModal);
-      document.getElementById('share-modal').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('share-modal')) closeShareModal();
-      });
-    }
-
-    async function initGistImportMode(blobId) {
-      document.getElementById('color-bar').innerHTML =
-        '<span class="import-banner">Loading shared note…</span>';
-      try {
-        const resp = await fetch('https://mantledb.sh/v2/sticky-notes-share/' + blobId,
-          { headers: { 'Accept': 'application/json' } });
-        if (!resp.ok) throw new Error();
-        initImportMode(await resp.json());
-      } catch {
-        document.getElementById('color-bar').innerHTML =
-          '<span class="import-banner">Could not load note.</span>';
-        const viewEl = document.getElementById('view-render');
-        viewEl.classList.remove('hint');
-        viewEl.textContent = 'This share code is invalid or has expired.';
-        document.getElementById('status-bar').textContent = '';
-      }
-    }
-
-    function initImportMode(payload) {
-      note = {
-        id: null,
-        content: payload.content || '',
-        color: payload.color || '#FFF9C4',
-        created: Date.now(),
-        modified: Date.now()
-      };
-      document.body.style.backgroundColor = note.color;
-
-      document.getElementById('color-bar').innerHTML =
-        '<span class="import-banner">Shared note — </span>' +
-        '<button id="btn-import-save">Save to My Notes</button>';
-
-      const viewEl = document.getElementById('view-render');
-      viewEl.classList.remove('hint');
-      const frag = renderContent(note.content);
-      if (frag.childNodes.length) viewEl.appendChild(frag);
-
-      document.title = note.content.split('\n')[0].trim().slice(0, 40) || 'Shared Note';
-      document.getElementById('status-bar').textContent = 'Shared note — read only';
-
-      document.getElementById('btn-import-save').addEventListener('click', () => {
-        const saved = createNote();
-        saved.content = note.content;
-        saved.color = note.color;
-        saveNote(saved);
-        location.href = 'note.html?id=' + encodeURIComponent(saved.id);
-      });
-    }
-
     function init() {
-      const gistId = getParam('gist');
-      if (gistId) { initGistImportMode(gistId); return; }
-
-      const importData = getParam('import');
-      if (importData) {
-        try {
-          const payload = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(importData)))));
-          if (payload) { initImportMode(payload); return; }
-        } catch {}
-      }
-
       const id = getParam('id');
       if (!id) { document.title = 'Error'; document.body.textContent = 'No note ID.'; return; }
 
@@ -419,8 +255,6 @@ Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
         backBtn.style.display = '';
         backBtn.innerHTML = icon('back', 14) + ' Notes';
       }
-
-      initShareHandlers();
 
       document.getElementById('btn-pin').addEventListener('click', toggleDashboardPin);
 

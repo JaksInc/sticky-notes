@@ -17,12 +17,15 @@
   <meta name="theme-color" content="#f96302">
   <link rel="stylesheet" href="css/index.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="toolbar">
     <h1>Dashboard</h1>
     <button class="btn btn-secondary" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode"></button>
-    <button class="btn btn-secondary" id="btn-sync" title="Sync everything"><span data-icon="refresh"></span><span class="btn-label"> Sync</span></button>
+    <button class="btn btn-secondary" id="btn-cloud" title="Sign in to sync across devices"><span data-icon="user"></span><span class="btn-label"> Sign In</span></button>
     <button class="btn btn-secondary" id="btn-edit-layout" title="Edit layout"><span data-icon="grid"></span> <span class="btn-label">Layout</span></button>
     <button class="btn btn-secondary" id="btn-popout" title="Open in popup window"><span data-icon="popout"></span> Pop Out</button>
   </div>
@@ -92,8 +95,6 @@
         <span class="widget-title"><span class="widget-icon" data-icon="link"></span> Quick Links</span>
         <div class="widget-header-actions">
           <button class="btn btn-primary btn-sm" id="links-add-btn"><span data-icon="plus"></span> Add</button>
-          <button class="btn btn-secondary btn-sm" id="links-share-btn" title="Share links via code"></button>
-          <button class="btn btn-secondary btn-sm" id="links-import-btn" title="Import links from code"></button>
         </div>
       </div>
       <div class="widget-body" id="links-body"></div>
@@ -101,112 +102,48 @@
 
   </div>
 
-  <!-- Sync everything modal -->
-  <div class="import-modal" id="sync-modal" style="display:none">
-    <div class="import-modal-box">
-      <div class="import-modal-title">Sync Everything</div>
+  <!-- Cloud auth modal -->
+  <div class="import-modal" id="auth-modal" style="display:none">
+    <div class="import-modal-box auth-box">
+      <div class="import-modal-title" id="auth-title">Sign In</div>
 
-      <div class="sync-section">
-        <div class="sync-section-label">Export — share to another device</div>
-        <p class="import-modal-hint">Generates a one-time code with all your notes, links, to-dos, and layout.</p>
-        <div class="share-code-block">
-          <div class="share-code-label">Sync code</div>
-          <div class="share-code" id="sync-share-code">—</div>
-        </div>
-        <div id="sync-qr" style="display:flex;justify-content:center;padding:4px 0"></div>
+      <div id="auth-form-section">
+        <p class="import-modal-hint">Sync your notes across devices</p>
+        <input class="scan-input" id="auth-username" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input class="scan-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
+        <input class="scan-input" id="auth-regcode" type="password" placeholder="Registration code" autocomplete="off" style="display:none">
+        <div class="auth-error" id="auth-error" style="display:none"></div>
         <div class="import-modal-actions">
-          <button id="sync-gen-btn">Generate Code</button>
-          <button id="sync-copy-btn" disabled>Copy Code</button>
+          <button id="auth-submit">Sign In</button>
+          <button id="auth-toggle">Create Account</button>
+          <button id="auth-cancel">Cancel</button>
         </div>
       </div>
 
-      <div class="sync-divider"></div>
-
-      <div class="sync-section">
-        <div class="sync-section-label">Import — restore from another device</div>
-        <p class="import-modal-hint">Paste or type the 5-part code. This replaces all current data.</p>
-        <div class="code-inputs" id="sync-import-inputs">
-          <div class="code-row">
-            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-            <span class="code-sep">·</span>
-            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-            <span class="code-sep">·</span>
-            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-          </div>
-          <div class="code-row">
-            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-            <span class="code-sep">·</span>
-            <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-          </div>
-        </div>
-        <div class="import-error" id="sync-import-error" style="display:none"></div>
+      <div id="auth-signed-in-section" style="display:none">
+        <p class="import-modal-hint">Syncing automatically</p>
+        <div id="auth-user-email" class="auth-username-display"></div>
         <div class="import-modal-actions">
-          <button id="sync-import-go">Import All</button>
+          <button id="auth-signout">Sign Out</button>
+          <button id="auth-close">Close</button>
         </div>
-      </div>
-
-      <div class="import-modal-actions" style="margin-top:4px">
-        <button id="sync-close">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Links import modal -->
-  <div class="import-modal" id="links-import-modal" style="display:none">
-    <div class="import-modal-box">
-      <div class="import-modal-title">Import Links by Code</div>
-      <p class="import-modal-hint">Paste or type the 5-part code from the Share screen</p>
-      <div class="code-inputs">
-        <div class="code-row">
-          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-          <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-          <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-        </div>
-        <div class="code-row">
-          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-          <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="5" autocomplete="off" spellcheck="false" inputmode="text">
-        </div>
-      </div>
-      <div class="import-error" id="links-import-error" style="display:none"></div>
-      <div class="import-modal-actions">
-        <button id="links-import-go">Import</button>
-        <button id="links-import-cancel">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Links share modal -->
-  <div class="import-modal" id="links-share-modal" style="display:none">
-    <div class="import-modal-box">
-      <div class="import-modal-title">Share Links</div>
-      <p class="import-modal-hint">Scan the QR code or type the code on another device</p>
-      <div class="share-code-block">
-        <div class="share-code-label">Import code</div>
-        <div class="share-code" id="links-share-code">Creating…</div>
-      </div>
-      <div id="links-qr" style="display:flex;justify-content:center;padding:8px 0 4px"></div>
-      <div class="import-modal-actions">
-        <button id="links-copy-code" disabled>Copy Code</button>
-        <button id="links-share-close">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="js/icons.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/layout.js"></script>
-  <script src="js/sync.js"></script>
   <script>
     document.querySelectorAll('[data-icon]').forEach(function(el) {
       el.innerHTML = icon(el.dataset.icon, parseInt(el.dataset.size) || 15);
     });
   </script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
 </body>
 </html>

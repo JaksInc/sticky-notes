@@ -269,7 +269,7 @@ body {
   .card { height: 130px; }
 }
 
-/* ── Import by code modal ── */
+/* ── Auth modal ── */
 .import-modal {
   position: fixed;
   inset: 0;
@@ -309,46 +309,19 @@ body {
   align-self: flex-start;
 }
 
-.code-inputs {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+.scan-input {
   width: 100%;
-}
-
-.code-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.code-chunk {
-  width: 112px;
-  padding: 10px 6px;
-  border: 1.5px solid #d0ccc0;
+  padding: 9px 12px;
+  border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  font-family: 'Courier New', monospace;
-  font-size: 16px; /* 16px prevents iOS auto-zoom on focus */
-  letter-spacing: 1px;
-  text-align: center;
-  color: var(--color-text);
+  font-size: 16px;
   background: var(--color-surface);
+  color: var(--color-text);
   outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
 }
-[data-theme="dark"] .code-chunk { border-color: var(--color-border-strong); }
-.code-chunk:focus {
-  border-color: var(--color-primary);
-  box-shadow: var(--focus-ring);
-}
-
-.code-sep {
-  color: var(--color-text-muted);
-  font-size: 20px;
-  user-select: none;
-  flex-shrink: 0;
-}
+.scan-input:focus { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+.scan-input::placeholder { color: var(--color-text-muted); }
 
 .import-modal-actions {
   display: flex;
@@ -366,22 +339,3 @@ body {
   font-weight: 500;
 }
 .import-modal-actions button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-
-#btn-import-go { background: var(--color-primary); color: #fff; }
-#btn-import-go:hover { opacity: .88; }
-#btn-import-cancel { background: rgba(0,0,0,.08); color: var(--color-text); }
-#btn-import-cancel:hover { background: rgba(0,0,0,.14); }
-
-@media (max-width: 480px) {
-  .code-chunk { width: 88px; font-size: 15px; letter-spacing: 0; padding: 9px 4px; }
-  .code-sep { font-size: 16px; }
-  .import-modal-box { padding: 24px 20px 20px; gap: 16px; }
-  .import-modal-hint { margin: 0; }
-  .sync-section { gap: 12px; }
-  .sync-divider { margin: 4px 0; }
-}
-
-@media (max-width: 390px) {
-  .code-chunk { width: 70px; font-size: 14px; padding: 8px 2px; }
-  .code-row { gap: 4px; }
-}

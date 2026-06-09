@@ -23,7 +23,6 @@
     <h1>All Notes</h1>
     <input type="search" id="search-input" class="search-input" placeholder="Search notes…" autocomplete="off">
     <button class="btn btn-primary" id="btn-new"></button>
-    <button class="btn btn-secondary" id="btn-import-code" title="Import by Code"></button>
     <button class="btn btn-secondary" id="btn-export"></button>
     <button class="btn btn-secondary" id="btn-import-file"></button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
@@ -31,30 +30,6 @@
     <button class="btn btn-secondary" id="btn-theme" title="Switch to dark mode" aria-label="Toggle dark mode"></button>
     <button class="btn btn-secondary" id="btn-popup" title="Open in popup window"></button>
   </div>
-  <!-- Import by code modal -->
-  <div class="import-modal" id="import-modal" style="display:none">
-    <div class="import-modal-box">
-      <div class="import-modal-title">Import Note by Code</div>
-      <p class="import-modal-hint">Paste or type the 4-part code from the Share screen</p>
-      <div class="code-inputs">
-        <div class="code-row">
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-          <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-        </div>
-        <div class="code-row">
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-          <span class="code-sep">·</span>
-          <input class="code-chunk" maxlength="8" autocomplete="off" spellcheck="false" inputmode="text">
-        </div>
-      </div>
-      <div class="import-modal-actions">
-        <button id="btn-import-go">Import</button>
-        <button id="btn-import-cancel">Cancel</button>
-      </div>
-    </div>
-  </div>
-
   <div class="grid-container">
     <div class="grid" id="grid"></div>
     <div class="empty-state" id="empty-state" style="display:none">
@@ -227,65 +202,6 @@
       renderGrid();
     });
 
-    const codeChunks = Array.from(document.querySelectorAll('.code-chunk'));
-
-    function getImportCode() {
-      return codeChunks.map(c => c.value).join('');
-    }
-
-    function distributeCode(text, fromIndex) {
-      const clean = text.replace(/[^0-9a-f]/gi, '').toLowerCase();
-      const start = clean.length >= 32 ? 0 : fromIndex;
-      let offset = 0;
-      for (let i = start; i < codeChunks.length && offset < clean.length; i++) {
-        codeChunks[i].value = clean.slice(offset, offset + 8);
-        offset += 8;
-      }
-      const lastFilled = Math.min(start + Math.ceil(clean.length / 8) - 1, codeChunks.length - 1);
-      codeChunks[lastFilled].focus();
-      if (getImportCode().length >= 32) document.getElementById('btn-import-go').click();
-    }
-
-    codeChunks.forEach((input, i) => {
-      input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^0-9a-f]/gi, '').toLowerCase();
-        if (input.value.length === 8) {
-          if (i < codeChunks.length - 1) codeChunks[i + 1].focus();
-          else document.getElementById('btn-import-go').click();
-        }
-      });
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && input.value.length === 0 && i > 0) codeChunks[i - 1].focus();
-        if (e.key === 'Enter') document.getElementById('btn-import-go').click();
-        if (e.key === 'Escape') document.getElementById('import-modal').style.display = 'none';
-      });
-      input.addEventListener('paste', (e) => {
-        e.preventDefault();
-        distributeCode((e.clipboardData || window.clipboardData).getData('text'), i);
-      });
-    });
-
-    document.getElementById('btn-import-code').addEventListener('click', () => {
-      codeChunks.forEach(c => c.value = '');
-      document.getElementById('import-modal').style.display = 'flex';
-      codeChunks[0].focus();
-    });
-
-    document.getElementById('btn-import-go').addEventListener('click', () => {
-      const code = getImportCode().replace(/\s/g, '');
-      if (code.length < 32) return;
-      location.href = 'note.html?gist=' + encodeURIComponent(code);
-    });
-
-    document.getElementById('btn-import-cancel').addEventListener('click', () => {
-      document.getElementById('import-modal').style.display = 'none';
-    });
-
-    document.getElementById('import-modal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('import-modal'))
-        document.getElementById('import-modal').style.display = 'none';
-    });
-
     document.getElementById('btn-export').addEventListener('click', () => {
       const json = JSON.stringify(getAllNotes(), null, 2);
       const blob = new Blob([json], { type: 'application/json' });
@@ -361,7 +277,6 @@
     document.getElementById('btn-back-dashboard').innerHTML = icon('back', 14) + '<span class="btn-label"> Dashboard</span>';
     document.getElementById('btn-new').title = 'New Note';
     document.getElementById('btn-new').innerHTML = icon('plus', 14) + '<span class="btn-label"> New Note</span>';
-    document.getElementById('btn-import-code').innerHTML = icon('hash', 14) + '<span class="btn-label"> Import by Code</span>';
     document.getElementById('btn-export').title = 'Export notes';
     document.getElementById('btn-export').innerHTML = icon('download', 14) + '<span class="btn-label"> Export</span>';
     document.getElementById('btn-import-file').title = 'Import notes from file';
