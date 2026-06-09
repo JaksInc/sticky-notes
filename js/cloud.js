@@ -56,7 +56,7 @@
       }
       data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       data._session  = SESSION;
-      await db.doc('users/' + auth.currentUser.uid + '/data').set(data);
+      await db.doc('users/' + auth.currentUser.uid + '/data/sync').set(data);
       origSet(LAST_SYNC_KEY, String(Date.now()));
       updateSyncStatus('Synced');
       setTimeout(function () { updateSyncStatus(''); }, 3000);
@@ -90,7 +90,7 @@
 
   async function pullOnLogin(uid) {
     var snap;
-    try { snap = await db.doc('users/' + uid + '/data').get(); }
+    try { snap = await db.doc('users/' + uid + '/data/sync').get(); }
     catch (err) { console.error('Cloud pull failed:', err); return; }
 
     if (!snap.exists) {
@@ -127,7 +127,7 @@
 
   var unsubscribe;
   function startListener(uid) {
-    unsubscribe = db.doc('users/' + uid + '/data').onSnapshot(function (snap) {
+    unsubscribe = db.doc('users/' + uid + '/data/sync').onSnapshot(function (snap) {
       if (!snap.exists) return;
       var d = snap.data();
       if (d._session === SESSION) return;
