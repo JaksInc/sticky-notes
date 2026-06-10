@@ -24,9 +24,7 @@
   }
 
   function getInitials(name) {
-    var words = (name || '').trim().split(/\s+/);
-    if (words.length === 1) return (words[0] || '?').slice(0, 2).toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
+    return (name || '').trim().split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase() || '?';
   }
 
   function isMobile() {
@@ -667,18 +665,33 @@
         urlInput.className = 'todo-input';
         urlInput.value = link.url;
 
+        let editUseInitials = !!link.useInitials;
+
+        const initialsBtn = document.createElement('button');
+        initialsBtn.type = 'button';
+        initialsBtn.className = 'link-initials-btn';
+        initialsBtn.title = 'Toggle initials / favicon';
+
+        let syncInitialsBtn = () => {};
+
         const colorRow = buildLinkColorRow(editFormColor, color => {
           editFormColor = editFormColor === color ? null : color;
+          syncInitialsBtn();
           return editFormColor;
         });
 
-        const initialsLabel = document.createElement('label');
-        initialsLabel.className = 'link-initials-toggle';
-        const initialsCheckbox = document.createElement('input');
-        initialsCheckbox.type = 'checkbox';
-        initialsCheckbox.checked = !!link.useInitials;
-        initialsLabel.appendChild(initialsCheckbox);
-        initialsLabel.append(' Use initials instead of favicon');
+        syncInitialsBtn = function () {
+          initialsBtn.textContent = getInitials(nameInput.value);
+          initialsBtn.style.background = editFormColor || '';
+          initialsBtn.classList.toggle('active', editUseInitials);
+        };
+        syncInitialsBtn();
+
+        nameInput.addEventListener('input', syncInitialsBtn);
+        initialsBtn.addEventListener('click', () => {
+          editUseInitials = !editUseInitials;
+          syncInitialsBtn();
+        });
 
         function saveEdit() {
           const name = nameInput.value.trim();
@@ -688,7 +701,7 @@
           const all = loadLinks();
           const i = all.findIndex(l => l.id === link.id);
           if (i !== -1) {
-            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, useInitials: initialsCheckbox.checked };
+            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, useInitials: editUseInitials };
           }
           saveLinks(all);
           editingLinkId = null;
@@ -731,7 +744,7 @@
         form.appendChild(nameInput);
         form.appendChild(urlInput);
         form.appendChild(colorRow);
-        form.appendChild(initialsLabel);
+        form.appendChild(initialsBtn);
         form.appendChild(actions);
         grid.appendChild(form);
         setTimeout(() => nameInput.focus(), 0);
@@ -844,18 +857,33 @@
       urlInput.placeholder = 'URL (e.g. "https://...")';
       urlInput.id = 'link-url-input';
 
+      let addUseInitials = false;
+
+      const initialsBtn = document.createElement('button');
+      initialsBtn.type = 'button';
+      initialsBtn.className = 'link-initials-btn';
+      initialsBtn.title = 'Toggle initials / favicon';
+
+      let syncInitialsBtn = () => {};
+
       const colorRow = buildLinkColorRow(linkFormColor, color => {
         linkFormColor = linkFormColor === color ? null : color;
+        syncInitialsBtn();
         return linkFormColor;
       });
 
-      const initialsLabel = document.createElement('label');
-      initialsLabel.className = 'link-initials-toggle';
-      const initialsCheckbox = document.createElement('input');
-      initialsCheckbox.type = 'checkbox';
-      initialsCheckbox.checked = false;
-      initialsLabel.appendChild(initialsCheckbox);
-      initialsLabel.append(' Use initials instead of favicon');
+      syncInitialsBtn = function () {
+        initialsBtn.textContent = getInitials(nameInput.value);
+        initialsBtn.style.background = linkFormColor || '';
+        initialsBtn.classList.toggle('active', addUseInitials);
+      };
+      syncInitialsBtn();
+
+      nameInput.addEventListener('input', syncInitialsBtn);
+      initialsBtn.addEventListener('click', () => {
+        addUseInitials = !addUseInitials;
+        syncInitialsBtn();
+      });
 
       const actions = document.createElement('div');
       actions.className = 'link-form-actions';
@@ -866,7 +894,7 @@
         if (!name || !url) return;
         const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
         const all = loadLinks();
-        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, useInitials: initialsCheckbox.checked });
+        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, useInitials: addUseInitials });
         saveLinks(all);
         linksFormOpen = false;
         linkFormColor = null;
@@ -905,7 +933,7 @@
       form.appendChild(nameInput);
       form.appendChild(urlInput);
       form.appendChild(colorRow);
-      form.appendChild(initialsLabel);
+      form.appendChild(initialsBtn);
       form.appendChild(actions);
       body.appendChild(form);
 

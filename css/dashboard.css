@@ -513,14 +513,26 @@ body { overflow-x: hidden; }
   line-height: 1;
   letter-spacing: -.5px;
 }
-.link-initials-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
+.link-initials-btn {
+  align-self: flex-start;
+  min-width: 40px;
+  height: 40px;
+  padding: 4px 8px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .5px;
   cursor: pointer;
-  user-select: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.link-initials-btn:hover { border-color: var(--color-primary); }
+.link-initials-btn.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+  color: #333;
 }
 
 .link-form-actions {
