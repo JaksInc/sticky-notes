@@ -13,10 +13,21 @@
   let todoPage = 0;
   let calSelectedCell = null;
   let linkFormColor = null;
-  let linkFormIcon  = null;
   let editingLinkId = null;
   let editFormColor = null;
-  let editFormIcon  = null;
+
+  function getFaviconUrl(url) {
+    try {
+      var domain = new URL(url).hostname;
+      return 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=64';
+    } catch(_) { return ''; }
+  }
+
+  function getInitials(name) {
+    var words = (name || '').trim().split(/\s+/);
+    if (words.length === 1) return (words[0] || '?').slice(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
 
   function isMobile() {
     return window.innerWidth < 768 || 'ontouchstart' in window;
@@ -608,14 +619,6 @@
     '#F5F5F5', '#FFFFFF',
   ];
 
-  const LINK_ICONS = [
-    'globe', 'mail', 'chart', 'folder', 'people', 'gear',
-    'home', 'star', 'terminal', 'chat', 'video', 'bell',
-    'calendar', 'document', 'checklist', 'link', 'bookmark', 'pin',
-    'scanner', 'truck', 'tag', 'orders', 'paint', 'browser',
-    'table', 'engage', 'register',
-  ];
-
   function loadLinks() {
     try { return JSON.parse(localStorage.getItem(LINKS_KEY) || '[]'); }
     catch { return []; }
@@ -645,25 +648,6 @@
     return row;
   }
 
-  function buildLinkIconPicker(currentIcon, onChange) {
-    const wrap = document.createElement('div');
-    wrap.className = 'link-icon-picker';
-    LINK_ICONS.forEach(name => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'link-icon-btn' + (name === currentIcon ? ' active' : '');
-      btn.title = name;
-      btn.innerHTML = icon(name, 16);
-      btn.addEventListener('click', () => {
-        const next = onChange(name);
-        wrap.querySelectorAll('.link-icon-btn').forEach(b => b.classList.remove('active'));
-        if (next) btn.classList.add('active');
-      });
-      wrap.appendChild(btn);
-    });
-    return wrap;
-  }
-
   function buildLinksGrid(links) {
     const grid = document.createElement('div');
     grid.className = 'links-grid';
@@ -683,15 +667,18 @@
         urlInput.className = 'todo-input';
         urlInput.value = link.url;
 
-        const iconPicker = buildLinkIconPicker(editFormIcon, name => {
-          editFormIcon = editFormIcon === name ? null : name;
-          return editFormIcon;
-        });
-
         const colorRow = buildLinkColorRow(editFormColor, color => {
           editFormColor = editFormColor === color ? null : color;
           return editFormColor;
         });
+
+        const initialsLabel = document.createElement('label');
+        initialsLabel.className = 'link-initials-toggle';
+        const initialsCheckbox = document.createElement('input');
+        initialsCheckbox.type = 'checkbox';
+        initialsCheckbox.checked = !!link.useInitials;
+        initialsLabel.appendChild(initialsCheckbox);
+        initialsLabel.append(' Use initials instead of favicon');
 
         function saveEdit() {
           const name = nameInput.value.trim();
@@ -701,19 +688,17 @@
           const all = loadLinks();
           const i = all.findIndex(l => l.id === link.id);
           if (i !== -1) {
-            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, icon: editFormIcon || null };
-            saveLinks(all);
+            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, useInitials: initialsCheckbox.checked };
           }
+          saveLinks(all);
           editingLinkId = null;
           editFormColor = null;
-          editFormIcon  = null;
           renderLinks();
         }
 
         function cancelEdit() {
           editingLinkId = null;
           editFormColor = null;
-          editFormIcon  = null;
           renderLinks();
         }
 
@@ -745,8 +730,8 @@
 
         form.appendChild(nameInput);
         form.appendChild(urlInput);
-        form.appendChild(iconPicker);
         form.appendChild(colorRow);
+        form.appendChild(initialsLabel);
         form.appendChild(actions);
         grid.appendChild(form);
         setTimeout(() => nameInput.focus(), 0);
@@ -767,11 +752,28 @@
 
       const iconEl = document.createElement('div');
       iconEl.className = 'link-tile-icon';
-      if (link.icon) {
-        iconEl.innerHTML = icon(link.icon, 24);
-      } else {
-        iconEl.textContent = (link.name || '?')[0].toUpperCase();
+      if (link.useInitials) {
+        iconEl.textContent = getInitials(link.name);
         iconEl.classList.add('link-tile-letter');
+      } else {
+        const faviconUrl = getFaviconUrl(link.url);
+        if (faviconUrl) {
+          const img = document.createElement('img');
+          img.className = 'link-tile-favicon';
+          img.src = faviconUrl;
+          img.alt = '';
+          img.width = 24;
+          img.height = 24;
+          img.addEventListener('error', function () {
+            iconEl.removeChild(img);
+            iconEl.textContent = getInitials(link.name);
+            iconEl.classList.add('link-tile-letter');
+          });
+          iconEl.appendChild(img);
+        } else {
+          iconEl.textContent = getInitials(link.name);
+          iconEl.classList.add('link-tile-letter');
+        }
       }
 
       const label = document.createElement('span');
@@ -791,7 +793,6 @@
         e.stopPropagation();
         editingLinkId = link.id;
         editFormColor = link.color || null;
-        editFormIcon  = link.icon  || null;
         linksFormOpen = false;
         renderLinks();
       });
@@ -843,15 +844,18 @@
       urlInput.placeholder = 'URL (e.g. "https://...")';
       urlInput.id = 'link-url-input';
 
-      const iconPicker = buildLinkIconPicker(linkFormIcon, name => {
-        linkFormIcon = linkFormIcon === name ? null : name;
-        return linkFormIcon;
-      });
-
       const colorRow = buildLinkColorRow(linkFormColor, color => {
         linkFormColor = linkFormColor === color ? null : color;
         return linkFormColor;
       });
+
+      const initialsLabel = document.createElement('label');
+      initialsLabel.className = 'link-initials-toggle';
+      const initialsCheckbox = document.createElement('input');
+      initialsCheckbox.type = 'checkbox';
+      initialsCheckbox.checked = false;
+      initialsLabel.appendChild(initialsCheckbox);
+      initialsLabel.append(' Use initials instead of favicon');
 
       const actions = document.createElement('div');
       actions.className = 'link-form-actions';
@@ -862,18 +866,16 @@
         if (!name || !url) return;
         const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
         const all = loadLinks();
-        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, icon: linkFormIcon || null });
+        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, useInitials: initialsCheckbox.checked });
         saveLinks(all);
         linksFormOpen = false;
         linkFormColor = null;
-        linkFormIcon  = null;
         renderLinks();
       }
 
       function cancelAdd() {
         linksFormOpen = false;
         linkFormColor = null;
-        linkFormIcon  = null;
         renderLinks();
       }
 
@@ -902,8 +904,8 @@
       actions.appendChild(cancelBtn);
       form.appendChild(nameInput);
       form.appendChild(urlInput);
-      form.appendChild(iconPicker);
       form.appendChild(colorRow);
+      form.appendChild(initialsLabel);
       form.appendChild(actions);
       body.appendChild(form);
 
@@ -929,7 +931,6 @@
     document.getElementById('links-add-btn').addEventListener('click', () => {
       linksFormOpen = true;
       linkFormColor = null;
-      linkFormIcon  = null;
       editingLinkId = null;
       renderLinks();
     });
