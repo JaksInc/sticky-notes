@@ -25,46 +25,60 @@
   ];
   var LAST_SYNC_KEY = '_cloud_last_sync';
 
-  // ── localStorage intercept ────────────────────────────────────────────────
+  // ── localStorage intercept (layout + view only — no explicit hook points) ─
 
   var origSet = localStorage.setItem.bind(localStorage);
+  var INTERCEPT_KEYS = ['qb-layout', 'sticky-notes-view'];
   localStorage.setItem = function (key, value) {
     origSet(key, value);
-    if (SYNC_KEYS.includes(key) && auth.currentUser) debouncedPush();
+    if (INTERCEPT_KEYS.includes(key) && auth.currentUser) pushKey(key, value);
   };
 
+  // Catch note saves from note.html popup window
   window.addEventListener('storage', function (e) {
-    if (SYNC_KEYS.includes(e.key) && auth.currentUser) debouncedPush();
+    if (e.key === 'sticky-notes' && auth.currentUser) pushKey('sticky-notes', e.newValue);
   });
 
-  // ── Debounced push ────────────────────────────────────────────────────────
+  // ── Key-level push ────────────────────────────────────────────────────────
 
-  var pushTimer;
-  function debouncedPush() {
-    clearTimeout(pushTimer);
-    pushTimer = setTimeout(pushToCloud, 2000);
-  }
+  var dirtyKeys = new Set();
 
-  async function pushToCloud() {
+  async function pushKey(key, raw) {
     if (!auth.currentUser) return;
+    var value;
+    try { value = JSON.parse(raw); } catch (_) { value = raw; }
+    var payload = {};
+    payload[key]        = value;
+    payload.updatedAt   = firebase.firestore.FieldValue.serverTimestamp();
+    payload._session    = SESSION;
+    payload._changedKey = key;
+    updateSyncStatus('Syncing…');
     try {
-      updateSyncStatus('Syncing…');
-      var data = {};
-      for (var k of SYNC_KEYS) {
-        try { data[k] = JSON.parse(localStorage.getItem(k)); }
-        catch (_) { data[k] = localStorage.getItem(k); }
-      }
-      data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-      data._session  = SESSION;
-      await db.doc('users/' + auth.currentUser.uid + '/data/sync').set(data);
+      await db.doc('users/' + auth.currentUser.uid + '/data/sync').set(payload, { merge: true });
+      dirtyKeys.delete(key);
       origSet(LAST_SYNC_KEY, String(Date.now()));
       updateSyncStatus('Synced');
       setTimeout(function () { updateSyncStatus(''); }, 3000);
     } catch (err) {
       console.error('Cloud push failed:', err);
+      dirtyKeys.add(key);
       updateSyncStatus('Sync failed', true);
     }
   }
+
+  // Explicit sync trigger called from dashboard.js after each action
+  window.cloudSync = function (key) {
+    if (!auth.currentUser) return;
+    pushKey(key, localStorage.getItem(key));
+  };
+
+  // Retry dirty keys on reconnect or tab focus
+  function retryDirty() {
+    if (!auth.currentUser || dirtyKeys.size === 0) return;
+    dirtyKeys.forEach(function (k) { window.cloudSync(k); });
+  }
+  window.addEventListener('online', retryDirty);
+  window.addEventListener('focus',  retryDirty);
 
   // ── Pull / merge ──────────────────────────────────────────────────────────
 
@@ -94,7 +108,10 @@
     catch (err) { console.error('Cloud pull failed:', err); return; }
 
     if (!snap.exists) {
-      await pushToCloud();
+      for (var k of SYNC_KEYS) {
+        var raw = localStorage.getItem(k);
+        if (raw != null) await pushKey(k, raw);
+      }
       return;
     }
 
@@ -132,13 +149,22 @@
       var d = snap.data();
       if (d._session === SESSION) return;
       if (justPulled) { justPulled = false; return; }
-      applyCloudData(d);
+      var key = d._changedKey;
+      if (!key || !SYNC_KEYS.includes(key)) return;
+      var stored = typeof d[key] === 'string' ? d[key] : JSON.stringify(d[key]);
+      if (stored === null || stored === 'null') {
+        localStorage.removeItem(key);
+      } else {
+        origSet(key, stored);
+      }
       origSet(LAST_SYNC_KEY, String(Date.now()));
-      location.reload();
+      window.dispatchEvent(new CustomEvent('cloud-applied', { detail: { key: key } }));
     });
   }
 
   // ── Auth state ────────────────────────────────────────────────────────────
+
+  var pendingLogout = false;
 
   auth.onAuthStateChanged(function (user) {
     if (user) {
@@ -148,7 +174,14 @@
       showLoggedIn(user.email);
     } else {
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-      showLoggedOut();
+      if (pendingLogout) {
+        pendingLogout = false;
+        SYNC_KEYS.forEach(function (k) { localStorage.removeItem(k); });
+        origSet(LAST_SYNC_KEY, '0');
+        location.reload();
+      } else {
+        showLoggedOut();
+      }
     }
   });
 
@@ -248,8 +281,11 @@
   });
 
   document.getElementById('auth-sync-now').addEventListener('click', function () {
-    clearTimeout(pushTimer);
-    pushToCloud();
+    if (!auth.currentUser) return;
+    SYNC_KEYS.forEach(function (k) {
+      var raw = localStorage.getItem(k);
+      if (raw != null) pushKey(k, raw);
+    });
   });
 
   function closeAuthModal() {
@@ -321,6 +357,7 @@
   });
 
   document.getElementById('auth-signout').addEventListener('click', async function () {
+    pendingLogout = true;
     await auth.signOut();
     closeAuthModal();
   });

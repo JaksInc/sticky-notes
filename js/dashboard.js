@@ -273,7 +273,8 @@
     }));
 
     header.appendChild(mkBtn('Unpin', 'Remove from memo widget', 'btn-secondary btn-sm memo-unpin-btn', () => {
-      localStorage.removeItem(PINNED_KEY);
+      localStorage.setItem(PINNED_KEY, '');
+      window.cloudSync?.('sticky-pinned');
       memoPickerOpen = false;
       memoIsEditing = false;
       renderMemo();
@@ -292,19 +293,19 @@
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
           const n = getNote(pinnedId);
-          if (n) { n.content = ta.value; saveNote(n); }
+          if (n) { n.content = ta.value; saveNote(n); window.cloudSync?.('sticky-notes'); }
         }, 300);
       });
       ta.addEventListener('blur', () => {
         const n = getNote(pinnedId);
-        if (n) { n.content = ta.value; saveNote(n); }
+        if (n) { n.content = ta.value; saveNote(n); window.cloudSync?.('sticky-notes'); }
         memoIsEditing = false;
         renderMemo();
       });
       ta.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
           const n = getNote(pinnedId);
-          if (n) { n.content = ta.value; saveNote(n); }
+          if (n) { n.content = ta.value; saveNote(n); window.cloudSync?.('sticky-notes'); }
           memoIsEditing = false;
           renderMemo();
         }
@@ -359,6 +360,7 @@
         }
         item.addEventListener('click', () => {
           localStorage.setItem(PINNED_KEY, note.id);
+          window.cloudSync?.('sticky-pinned');
           memoPickerOpen = false;
           memoIsEditing = false;
           renderMemo();
@@ -411,6 +413,7 @@
 
   function saveTodos(todos) {
     localStorage.setItem('sticky-todos', JSON.stringify(todos));
+    window.cloudSync?.('sticky-todos');
   }
 
   function renderTodos() {
@@ -620,6 +623,7 @@
 
   function saveLinks(links) {
     localStorage.setItem(LINKS_KEY, JSON.stringify(links));
+    window.cloudSync?.('sticky-links');
   }
 
   function buildLinkColorRow(currentColor, onChange) {
@@ -967,6 +971,15 @@
       renderMemo();
       renderNotes();
     }
+  });
+
+  window.addEventListener('cloud-applied', e => {
+    const key = e.detail.key;
+    if (key === 'sticky-notes')  { syncMemoFromStorage(); renderNotes(); }
+    if (key === 'sticky-todos')  { renderTodos(); }
+    if (key === 'sticky-links')  { renderLinks(); }
+    if (key === 'sticky-pinned') { memoPickerOpen = false; memoIsEditing = false; renderMemo(); renderNotes(); }
+    if (key === 'qb-layout')     { location.reload(); } // layout changes are infrequent; full reload acceptable
   });
 
   if ('serviceWorker' in navigator) {
