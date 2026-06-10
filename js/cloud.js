@@ -119,14 +119,7 @@
     var lastSync  = Number(localStorage.getItem(LAST_SYNC_KEY) || 0);
     var cloudTime = d.updatedAt ? d.updatedAt.toMillis() : 0;
 
-    if (cloudTime <= lastSync) {
-      // Cloud is not newer — push local state to sync any changes made while offline
-      for (var k of SYNC_KEYS) {
-        var r = localStorage.getItem(k);
-        if (r != null) await pushKey(k, r);
-      }
-      return;
-    }
+    if (cloudTime <= lastSync) return;
 
     var localNotes  = [];
     try { localNotes = JSON.parse(localStorage.getItem('sticky-notes') || '[]'); } catch (_) {}
@@ -171,6 +164,8 @@
 
   // ── Auth state ────────────────────────────────────────────────────────────
 
+  var pendingLogout = false;
+
   auth.onAuthStateChanged(function (user) {
     if (user) {
       pullOnLogin(user.uid).then(function () {
@@ -179,10 +174,14 @@
       showLoggedIn(user.email);
     } else {
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-      SYNC_KEYS.forEach(function (k) { localStorage.removeItem(k); });
-      origSet(LAST_SYNC_KEY, '0');
-      showLoggedOut();
-      location.reload();
+      if (pendingLogout) {
+        pendingLogout = false;
+        SYNC_KEYS.forEach(function (k) { localStorage.removeItem(k); });
+        origSet(LAST_SYNC_KEY, '0');
+        location.reload();
+      } else {
+        showLoggedOut();
+      }
     }
   });
 
@@ -358,6 +357,7 @@
   });
 
   document.getElementById('auth-signout').addEventListener('click', async function () {
+    pendingLogout = true;
     await auth.signOut();
     closeAuthModal();
   });
