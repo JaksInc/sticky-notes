@@ -54,6 +54,12 @@
   --shadow-3: 0 4px 16px rgba(0,0,0,.6);
 }
 
+/* ── Theme fade (only during user-triggered toggle, not on page load) ── */
+.theme-transitioning,
+.theme-transitioning * {
+  transition: background-color .25s, color .25s, border-color .25s, box-shadow .25s !important;
+}
+
 /* ── Shared color picker component ── */
 .memo-color-btn {
   position: relative;
