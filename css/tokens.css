@@ -57,7 +57,7 @@
 /* ── Theme fade (only during user-triggered toggle, not on page load) ── */
 .theme-transitioning,
 .theme-transitioning * {
-  transition: background-color .25s, color .25s, border-color .25s, box-shadow .25s !important;
+  transition: background-color .7s, color .7s, border-color .7s, box-shadow .7s !important;
 }
 
 /* ── Shared color picker component ── */

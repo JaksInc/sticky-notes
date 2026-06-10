@@ -89,7 +89,7 @@
       var html = document.documentElement;
       html.classList.add('theme-transitioning');
       applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-      setTimeout(function() { html.classList.remove('theme-transitioning'); }, 300);
+      setTimeout(function() { html.classList.remove('theme-transitioning'); }, 750);
     });
     var current = localStorage.getItem('qb-theme') === 'dark' ? 'dark' : 'light';
     btn.innerHTML = icon(current === 'dark' ? 'sun' : 'moon', 16);
