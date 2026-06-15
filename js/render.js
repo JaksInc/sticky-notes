@@ -14,7 +14,6 @@ function parseLabeledBarcode(line) {
   const after = line.slice(colonIdx + 1).trim();
   if (!label || !after) return null;
 
-  // After the colon must contain only digits, spaces, dashes
   if (!/^[\d\s-]+$/.test(after)) return null;
 
   const digits = extractDigits(after);
@@ -24,128 +23,122 @@ function parseLabeledBarcode(line) {
   return { ...barcode, label };
 }
 
+function detectBarcodeOnlyLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  const digits = extractDigits(trimmed);
+  if (digits.length >= 6 && digits === extractDigits(trimmed)) return detectBarcode(digits);
+  return null;
+}
+
+// Wrap a block HTML string with blank lines so marked treats it as a standalone
+// HTML block and doesn't consume surrounding lines.
+function htmlBlock(html) {
+  return '\n' + html + '\n';
+}
+
+// Full renderer for note.html view mode: interactive checkboxes, SVG barcodes
 function renderContent(content) {
-  const frag = document.createDocumentFragment();
   const lines = (content || '').split('\n');
-  let currentList = null;
+  const barcodes = [];
 
-  function flushList() {
-    if (currentList) {
-      frag.appendChild(currentList);
-      currentList = null;
-    }
-  }
-
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const line = lines[lineIdx];
-
+  const processedLines = lines.map((line, lineIdx) => {
+    // Interactive task checkbox — data-line preserved for toggle handler
     const checkMatch = line.match(/^\[([ x])\] (.*)$/i);
     if (checkMatch) {
-      flushList();
       const checked = checkMatch[1].toLowerCase() === 'x';
-      const div = document.createElement('div');
-      div.className = 'check-item' + (checked ? ' checked' : '');
-      div.dataset.line = lineIdx;
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = checked;
-      const span = document.createElement('span');
-      span.textContent = checkMatch[2];
-      div.appendChild(cb);
-      div.appendChild(span);
-      frag.appendChild(div);
-      continue;
+      const text = escapeHtml(checkMatch[2]);
+      return htmlBlock(
+        `<div class="check-item${checked ? ' checked' : ''}" data-line="${lineIdx}">` +
+        `<input type="checkbox"${checked ? ' checked' : ''}><span>${text}</span></div>`
+      );
     }
 
-    const bulletMatch = line.match(/^[-*] (.*)$/);
-    if (bulletMatch) {
-      if (!currentList) {
-        currentList = document.createElement('ul');
-        currentList.className = 'bullet-list';
-      }
-      const li = document.createElement('li');
-      li.textContent = bulletMatch[1];
-      currentList.appendChild(li);
-      continue;
-    }
-    flushList();
-
-    // Labeled barcode: "Label: 123456"
+    // Labeled barcode
     const labeled = parseLabeledBarcode(line);
     if (labeled) {
-      frag.appendChild(buildBarcodeElement(labeled, labeled.label));
-      continue;
+      const idx = barcodes.length;
+      barcodes.push({ barcode: labeled, label: labeled.label });
+      return htmlBlock(`<div class="barcode-placeholder" data-idx="${idx}"></div>`);
     }
 
-    // Unlabeled barcode: digits-only line
-    const digits = extractDigits(line);
-    const barcode = digits.length >= 6 ? detectBarcode(digits) : null;
-    if (barcode && digits === extractDigits(line) && line.trim() !== '') {
-      frag.appendChild(buildBarcodeElement(barcode, null));
-      continue;
+    // Unlabeled barcode (digits-only line)
+    const barcode = detectBarcodeOnlyLine(line);
+    if (barcode) {
+      const idx = barcodes.length;
+      barcodes.push({ barcode, label: null });
+      return htmlBlock(`<div class="barcode-placeholder" data-idx="${idx}"></div>`);
     }
 
-    const p = document.createElement('p');
-    p.className = 'text-line';
-    if (line.trim() === '') {
-      p.innerHTML = '&nbsp;';
-    } else {
-      p.textContent = line;
-    }
-    frag.appendChild(p);
-  }
+    return line;
+  });
 
-  flushList();
+  const html = marked.parse(processedLines.join('\n'));
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+
+  // Replace barcode placeholders with rendered SVG elements
+  wrapper.querySelectorAll('.barcode-placeholder').forEach(el => {
+    const { barcode, label } = barcodes[parseInt(el.dataset.idx)];
+    el.replaceWith(buildBarcodeElement(barcode, label));
+  });
+
+  const frag = document.createDocumentFragment();
+  while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
   return frag;
 }
 
-// Lightweight renderer for card previews — no SVG barcodes, just formatted text
+// Lightweight renderer for card previews: visual-only checkboxes, barcodes as text
 function renderPreview(content) {
   const lines = (content || '').split('\n');
-  const parts = [];
-  let inList = false;
+  const barcodes = [];
 
-  for (const line of lines) {
+  const processedLines = lines.map(line => {
+    // Visual-only checkbox (no interactivity in card preview)
     const checkMatch = line.match(/^\[([ x])\] (.*)$/i);
     if (checkMatch) {
-      if (inList) { parts.push('</ul>'); inList = false; }
       const checked = checkMatch[1].toLowerCase() === 'x';
       const icon = checked ? '☑' : '☐';
       const text = escapeHtml(checkMatch[2]);
       const style = checked ? ' style="text-decoration:line-through;color:#999"' : '';
-      parts.push(`<div class="preview-line"${style}>${icon} ${text}</div>`);
-      continue;
+      return htmlBlock(`<div class="preview-check"${style}>${icon} ${text}</div>`);
     }
 
-    const bulletMatch = line.match(/^[-*] (.*)$/);
-    if (bulletMatch) {
-      if (!inList) { parts.push('<ul class="preview-list">'); inList = true; }
-      parts.push(`<li>${escapeHtml(bulletMatch[1])}</li>`);
-      continue;
-    }
-    if (inList) { parts.push('</ul>'); inList = false; }
-
+    // Labeled barcode (text only in preview)
     const labeled = parseLabeledBarcode(line);
     if (labeled) {
-      const labelText = escapeHtml(labeled.label) + ': ';
-      parts.push(`<div class="preview-barcode">${labelText}<span class="preview-barcode-num">${escapeHtml(labeled.formatted)}</span></div>`);
-      continue;
+      const idx = barcodes.length;
+      barcodes.push({ barcode: labeled, label: labeled.label });
+      return htmlBlock(`<div class="barcode-placeholder" data-idx="${idx}"></div>`);
     }
 
-    const digits = extractDigits(line);
-    const barcode = digits.length >= 6 && line.trim() !== '' && digits === extractDigits(line) ? detectBarcode(digits) : null;
+    // Unlabeled barcode (text only in preview)
+    const barcode = detectBarcodeOnlyLine(line);
     if (barcode) {
-      parts.push(`<div class="preview-barcode"><span class="preview-barcode-num">${escapeHtml(barcode.formatted)}</span></div>`);
-      continue;
+      const idx = barcodes.length;
+      barcodes.push({ barcode, label: null });
+      return htmlBlock(`<div class="barcode-placeholder" data-idx="${idx}"></div>`);
     }
 
-    if (line.trim() === '') {
-      parts.push('<div class="preview-line">&nbsp;</div>');
-    } else {
-      parts.push(`<div class="preview-line">${escapeHtml(line)}</div>`);
-    }
-  }
+    return line;
+  });
 
-  if (inList) parts.push('</ul>');
-  return parts.join('');
+  const html = marked.parse(processedLines.join('\n'));
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+
+  wrapper.querySelectorAll('.barcode-placeholder').forEach(el => {
+    const { barcode, label } = barcodes[parseInt(el.dataset.idx)];
+    const div = document.createElement('div');
+    div.className = 'preview-barcode';
+    const num = document.createElement('span');
+    num.className = 'preview-barcode-num';
+    num.textContent = label ? label + ': ' + barcode.formatted : barcode.formatted;
+    div.appendChild(num);
+    el.replaceWith(div);
+  });
+
+  return wrapper.innerHTML;
 }
+
+marked.use({ breaks: true, gfm: true });
