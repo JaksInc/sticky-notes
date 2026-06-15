@@ -151,6 +151,7 @@ body { overflow-x: hidden; }
   outline: none;
 }
 .memo-view:focus-visible { box-shadow: inset var(--focus-ring); }
+.memo-view a { color: var(--color-text); text-decoration: underline; text-underline-offset: 2px; }
 .memo-view-hint {
   color: var(--color-text-muted);
   font-style: italic;

@@ -157,8 +157,9 @@ textarea.edit-raw.visible { display: block; }
 }
 
 .view-render a {
-  color: var(--color-primary);
+  color: var(--color-text);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .view-render code {
@@ -279,7 +280,7 @@ textarea.edit-raw.visible { display: block; }
 [data-theme="dark"] body[data-note-color] .check-item span,
 [data-theme="dark"] body[data-note-color] .barcode-inline-label,
 [data-theme="dark"] body[data-note-color] .barcode-inline-num { color: #333; }
-[data-theme="dark"] body[data-note-color] .view-render a { color: var(--color-primary-dark); }
+[data-theme="dark"] body[data-note-color] .view-render a { color: #333; }
 [data-theme="dark"] body[data-note-color] .view-render blockquote { color: #555; }
 [data-theme="dark"] body[data-note-color] .check-item.checked span { color: #888; }
 [data-theme="dark"] body[data-note-color] textarea.edit-raw { color: #333; }
