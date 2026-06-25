@@ -17,6 +17,7 @@
   <meta name="apple-mobile-web-app-title" content="Quarterboard">
   <meta name="theme-color" content="#f96302">
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@14/marked.min.js"></script>
   <link rel="stylesheet" href="css/note.css">
 </head>
 <body>
@@ -30,10 +31,10 @@
   <div class="content-area" id="content-area">
     <div class="view-render hint" id="view-render" tabindex="0"></div>
     <textarea class="edit-raw" id="edit-raw" placeholder="Type your note here…
-Use '- ' at the start of a line for bullet points.
-Use '[ ]' or '[x]' at the start of a line for checkboxes.
-Type digits alone for a barcode, or 'Label: digits' to label it.
-Supported: 6/10-digit Home Depot SKUs, 12-digit UPC, 13-digit EAN."></textarea>
+
+Markdown is supported: **bold**, *italic*, # Heading, - bullet list, [link](url).
+Use [ ] or [x] at the start of a line for checkboxes.
+Type digits alone for a barcode, or 'Label: digits' to label it."></textarea>
   </div>
 
   <div class="status-bar" id="status-bar"></div>

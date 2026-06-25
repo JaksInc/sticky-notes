@@ -121,23 +121,40 @@ body {
   font-style: italic;
 }
 
-.card-preview .preview-line {
+.card-preview p {
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.card-preview .preview-list {
+.card-preview ul, .card-preview ol {
   margin: 1px 0;
   padding-left: 14px;
 }
-.card-preview .preview-list li {
+.card-preview li {
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
+}
+
+.card-preview h1, .card-preview h2, .card-preview h3,
+.card-preview h4, .card-preview h5, .card-preview h6 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-preview .preview-check {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-preview .preview-barcode {
