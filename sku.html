@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKU Lookup</title>
+  <script>
+    (function(){ var t=localStorage.getItem('qb-theme'); if(t) document.documentElement.setAttribute('data-theme',t); })();
+  </script>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/sku.css">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Quarterboard">
+  <meta name="theme-color" content="#f96302">
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+
+<nav class="sku-toolbar">
+  <a class="sku-back-btn" id="btn-back" href="index.html"></a>
+  <h1>SKU Lookup</h1>
+  <button class="sku-theme-btn" id="btn-theme" title="Toggle theme"></button>
+</nav>
+
+<div class="sku-wrap">
+  <div class="sku-stat"><b id="sku-count">0</b> items</div>
+
+  <label class="sku-search-slot">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" id="sku-search" placeholder="Search by name, category, SKU..." autocomplete="off">
+  </label>
+
+  <button class="sku-btn primary" id="sku-add-btn"></button>
+
+  <div class="sku-btn-row">
+    <button class="sku-btn" id="sku-import-btn"></button>
+    <button class="sku-btn" id="sku-export-btn"></button>
+  </div>
+  <input type="file" id="sku-file-input" accept=".csv">
+
+  <div id="sku-list"></div>
+  <div class="sku-empty" id="sku-empty">
+    <b>No items yet</b>
+    Add an item or import a CSV to get started.
+  </div>
+
+  <footer class="sku-footer">
+    SKU formats: <b>####-###-###</b> (10-digit) or <b>###-###</b> (6-digit) - auto-formatted on edit.
+  </footer>
+</div>
+
+<script src="js/icons.js"></script>
+<script src="js/barcode.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'sticky-skus';
+
+  // ── Data ──────────────────────────────────────────────────────────────────
+
+  let data = [];
+  try { data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (_) {}
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // ── Toolbar labels ────────────────────────────────────────────────────────
+
+  document.getElementById('btn-back').innerHTML       = icon('back', 13) + ' Dashboard';
+  document.getElementById('sku-add-btn').innerHTML    = icon('plus', 14) + ' Add Item';
+  document.getElementById('sku-import-btn').innerHTML = icon('upload', 13) + ' Import';
+  document.getElementById('sku-export-btn').innerHTML = icon('download', 13) + ' Export';
+
+  // ── SKU formatting ────────────────────────────────────────────────────────
+
+  function formatSku(raw) {
+    const digits = (raw || '').replace(/\D/g, '');
+    if (digits.length === 6)  return { value: digits.slice(0,3) + '-' + digits.slice(3), valid: true };
+    if (digits.length === 10) return { value: digits.slice(0,4) + '-' + digits.slice(4,7) + '-' + digits.slice(7), valid: true };
+    return { value: (raw || '').trim(), valid: digits.length === 0 };
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  const listEl   = document.getElementById('sku-list');
+  const emptyEl  = document.getElementById('sku-empty');
+  const countEl  = document.getElementById('sku-count');
+  const searchEl = document.getElementById('sku-search');
+
+  function render() {
+    listEl.innerHTML = '';
+    emptyEl.style.display = data.length ? 'none' : 'block';
+    countEl.textContent = data.length;
+
+    data.forEach(row => {
+      const card = document.createElement('div');
+      card.className = 'sku-card';
+      card.dataset.id = row.id;
+
+      // Name + delete button
+      const top = document.createElement('div');
+      top.className = 'sku-card-top';
+
+      const nameField = document.createElement('div');
+      nameField.className = 'sku-field';
+      const nameCell = makeCell(row.name, 'sku-name-cell', 'Item name');
+      nameCell.addEventListener('blur', () => onFieldBlur(row.id, 'name', nameCell.textContent));
+      nameCell.addEventListener('keydown', blurOnEnter);
+      nameField.appendChild(nameCell);
+      top.appendChild(nameField);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'sku-del-btn';
+      delBtn.title = 'Delete item';
+      delBtn.innerHTML = icon('trash', 15);
+      delBtn.addEventListener('click', () => {
+        data = data.filter(r => r.id !== row.id);
+        save();
+        render();
+        applySearch();
+      });
+      top.appendChild(delBtn);
+      card.appendChild(top);
+
+      // Category + dimensions
+      const twoCol = document.createElement('div');
+      twoCol.className = 'sku-two-col';
+      twoCol.appendChild(buildLabeledField('category',   'Category',   row.category,   'e.g. Lumber', row.id));
+      twoCol.appendChild(buildLabeledField('dimensions', 'Dimensions', row.dimensions, 'e.g. 2x4x8',  row.id));
+      card.appendChild(twoCol);
+
+      // SKU
+      const skuLabel = document.createElement('div');
+      skuLabel.className = 'sku-field-label';
+      skuLabel.textContent = 'SKU';
+      card.appendChild(skuLabel);
+
+      const skuValueField = document.createElement('div');
+      skuValueField.className = 'sku-value-field';
+      if (row.sku && !formatSku(row.sku).valid) skuValueField.classList.add('invalid');
+
+      const skuCell = makeCell(row.sku, '', '000-000');
+      skuCell.addEventListener('blur', () => onSkuBlur(row.id, skuCell, skuValueField));
+      skuCell.addEventListener('keydown', blurOnEnter);
+      skuValueField.appendChild(skuCell);
+      card.appendChild(skuValueField);
+
+      // Barcode SVG
+      const barcodeArea = document.createElement('div');
+      barcodeArea.className = 'sku-barcode-area';
+      renderBarcodeSvg(row.sku, barcodeArea);
+      card.appendChild(barcodeArea);
+
+      listEl.appendChild(card);
+    });
+
+    applySearch();
+  }
+
+  function makeCell(value, extraClass, placeholder) {
+    const cell = document.createElement('div');
+    cell.className = 'sku-cell' + (extraClass ? ' ' + extraClass : '');
+    cell.contentEditable = 'true';
+    cell.dataset.placeholder = placeholder;
+    cell.textContent = value || '';
+    return cell;
+  }
+
+  function buildLabeledField(fieldName, labelText, value, placeholder, rowId) {
+    const wrap = document.createElement('div');
+    wrap.className = 'sku-field';
+    const lbl = document.createElement('div');
+    lbl.className = 'sku-field-label';
+    lbl.textContent = labelText;
+    wrap.appendChild(lbl);
+    const cell = makeCell(value, '', placeholder);
+    cell.addEventListener('blur', () => onFieldBlur(rowId, fieldName, cell.textContent));
+    cell.addEventListener('keydown', blurOnEnter);
+    wrap.appendChild(cell);
+    return wrap;
+  }
+
+  function renderBarcodeSvg(sku, container) {
+    container.innerHTML = '';
+    if (!sku) return;
+    const digits = sku.replace(/\D/g, '');
+    const barcode = digits.length >= 6 ? detectBarcode(digits) : null;
+    if (!barcode || !barcode.valid) return;
+    container.appendChild(buildBarcodeElement(barcode, null));
+  }
+
+  // ── Field handlers ────────────────────────────────────────────────────────
+
+  function blurOnEnter(e) {
+    if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  }
+
+  function onFieldBlur(id, field, value) {
+    const row = data.find(r => r.id === id);
+    if (row) { row[field] = value.trim(); save(); }
+  }
+
+  function onSkuBlur(id, cellEl, fieldEl) {
+    const row = data.find(r => r.id === id);
+    if (!row) return;
+    const result = formatSku(cellEl.textContent);
+    row.sku = result.value;
+    cellEl.textContent = result.value;
+    fieldEl.classList.toggle('invalid', !result.valid);
+    save();
+    const barcodeArea = fieldEl.closest('.sku-card').querySelector('.sku-barcode-area');
+    if (barcodeArea) renderBarcodeSvg(result.value, barcodeArea);
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────
+
+  function applySearch() {
+    const q = searchEl.value.trim().toLowerCase();
+    const cards = listEl.querySelectorAll('.sku-card');
+    let visible = 0;
+    cards.forEach(card => {
+      const match = !q || card.textContent.toLowerCase().includes(q);
+      card.classList.toggle('hidden', !match);
+      if (match) visible++;
+    });
+    countEl.textContent = q ? visible + ' / ' + data.length : data.length;
+  }
+
+  searchEl.addEventListener('input', applySearch);
+
+  // ── Add item ──────────────────────────────────────────────────────────────
+
+  document.getElementById('sku-add-btn').addEventListener('click', () => {
+    const newRow = { id: crypto.randomUUID(), name: '', category: '', dimensions: '', sku: '' };
+    data.push(newRow);
+    save();
+    searchEl.value = '';
+    render();
+    requestAnimationFrame(() => {
+      const card = listEl.querySelector('.sku-card[data-id="' + newRow.id + '"]');
+      if (card) card.querySelector('.sku-cell').focus();
+    });
+  });
+
+  // ── Export CSV ────────────────────────────────────────────────────────────
+
+  function csvEscape(val) {
+    val = (val == null) ? '' : String(val);
+    return /[",\n]/.test(val) ? '"' + val.replace(/"/g, '""') + '"' : val;
+  }
+
+  document.getElementById('sku-export-btn').addEventListener('click', () => {
+    const cols = ['name', 'category', 'dimensions', 'sku'];
+    const lines = [cols.join(',')].concat(data.map(row => cols.map(f => csvEscape(row[f])).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sku-lookup.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ── Import CSV ────────────────────────────────────────────────────────────
+
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], field = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQ) {
+        if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else inQ = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c !== '\r') field += c;
+      }
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.some(f => f.trim()));
+  }
+
+  document.getElementById('sku-import-btn').addEventListener('click', () => {
+    document.getElementById('sku-file-input').click();
+  });
+
+  document.getElementById('sku-file-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCSV(reader.result);
+      if (!rows.length) return;
+      const hdr = rows[0].map(h => h.trim().toLowerCase());
+      const hasHeader = hdr.includes('name') && hdr.includes('sku');
+      let start = 0;
+      let colMap = { name: 0, category: 1, dimensions: 2, sku: 3 };
+      if (hasHeader) {
+        start = 1;
+        colMap = { name: hdr.indexOf('name'), category: hdr.indexOf('category'), dimensions: hdr.indexOf('dimensions'), sku: hdr.indexOf('sku') };
+      }
+      data = [];
+      for (let i = start; i < rows.length; i++) {
+        const r = rows[i];
+        const skuRaw = colMap.sku >= 0 ? (r[colMap.sku] || '') : '';
+        data.push({
+          id: crypto.randomUUID(),
+          name:       colMap.name       >= 0 ? (r[colMap.name]       || '').trim() : '',
+          category:   colMap.category   >= 0 ? (r[colMap.category]   || '').trim() : '',
+          dimensions: colMap.dimensions >= 0 ? (r[colMap.dimensions] || '').trim() : '',
+          sku: formatSku(skuRaw).value
+        });
+      }
+      save();
+      searchEl.value = '';
+      render();
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  render();
+
+})();
+</script>
+</body>
+</html>

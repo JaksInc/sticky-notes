@@ -22,6 +22,7 @@
     'sticky-todos',
     'sticky-pinned',
     'sticky-notes-view',
+    'sticky-skus',
   ];
   var LAST_SYNC_KEY = '_cloud_last_sync';
 
@@ -34,9 +35,10 @@
     if (INTERCEPT_KEYS.includes(key) && auth.currentUser) pushKey(key, value);
   };
 
-  // Catch note saves from note.html popup window
+  // Catch saves from other pages (note.html popup, sku.html)
   window.addEventListener('storage', function (e) {
     if (e.key === 'sticky-notes' && auth.currentUser) pushKey('sticky-notes', e.newValue);
+    if (e.key === 'sticky-skus'  && auth.currentUser) pushKey('sticky-skus',  e.newValue);
   });
 
   // ── Key-level push ────────────────────────────────────────────────────────

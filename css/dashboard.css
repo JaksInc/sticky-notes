@@ -14,8 +14,9 @@ body { overflow-x: hidden; }
 /* ── Widget card ── */
 .widget {
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -33,10 +34,11 @@ body { overflow-x: hidden; }
 }
 
 .widget-title {
+  font-family: 'Oswald', sans-serif;
   font-weight: 600;
   font-size: 12px;
   color: var(--color-text-secondary);
-  letter-spacing: .2px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
@@ -73,8 +75,11 @@ body { overflow-x: hidden; }
 
 /* ── Calendar ── */
 .cal-heading {
+  font-family: 'Oswald', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--color-text);
   text-align: center;
   margin-bottom: 12px;
@@ -582,7 +587,7 @@ body { overflow-x: hidden; }
 .layout-ghost {
   background: var(--color-primary-light);
   border: 2px dashed var(--color-primary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   pointer-events: none;
   opacity: 0.6;
 }
