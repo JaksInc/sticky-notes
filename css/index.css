@@ -19,7 +19,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 6px 12px;
   background: var(--color-toolbar-bg);
   border-bottom: 2px solid var(--color-border);
   overflow: hidden;
@@ -37,26 +37,26 @@ body {
   flex: 1;
 }
 
-[data-theme="dark"] .toolbar h1 { color: var(--color-text); }
+[data-theme="dark"] .toolbar h1 { color: #fff; }
 
 .toolbar .btn-primary {
-  background: #fff;
-  color: var(--color-primary);
-}
-[data-theme="dark"] .toolbar .btn-primary {
-  background: var(--color-primary);
+  background: rgba(255,255,255,.22);
   color: #fff;
 }
+.toolbar .btn-primary:hover { background: rgba(255,255,255,.35); opacity: 1; }
 
 .toolbar .btn-secondary {
-  background: rgba(255,255,255,.92);
-  color: var(--color-text);
-  box-shadow: var(--shadow-1);
+  background: rgba(255,255,255,.22);
+  color: #fff;
+  box-shadow: none;
 }
+.toolbar .btn-secondary:hover { background: rgba(255,255,255,.35); opacity: 1; }
+
 [data-theme="dark"] .toolbar .btn-secondary {
-  background: rgba(255,255,255,.1);
-  color: var(--color-text);
+  background: rgba(255,255,255,.12);
+  color: #fff;
 }
+[data-theme="dark"] .toolbar .btn-secondary:hover { background: rgba(255,255,255,.22); }
 
 .toolbar a {
   text-decoration: none;
