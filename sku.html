@@ -73,26 +73,6 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  // ── Theme ─────────────────────────────────────────────────────────────────
-
-  function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('qb-theme', t);
-    updateThemeBtn();
-  }
-
-  function updateThemeBtn() {
-    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const btn = document.getElementById('btn-theme');
-    btn.innerHTML = icon(dark ? 'sun' : 'moon', 14);
-    btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
-  }
-
-  document.getElementById('btn-theme').addEventListener('click', function () {
-    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    applyTheme(dark ? 'light' : 'dark');
-  });
-
   // ── Toolbar labels ────────────────────────────────────────────────────────
 
   document.getElementById('btn-back').innerHTML       = icon('back', 13) + ' Dashboard';
@@ -352,7 +332,6 @@
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
-  updateThemeBtn();
   render();
 
 })();
