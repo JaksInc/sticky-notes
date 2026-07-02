@@ -345,3 +345,48 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
   color: var(--color-text-muted);
 }
 .sku-footer b { color: var(--color-primary); }
+
+/* ── SKU + barcode flex row ── */
+.sku-sku-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 0;
+}
+.sku-sku-row .sku-value-field { flex-shrink: 0; }
+.sku-sku-row .sku-barcode-area {
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Category filter ── */
+.sku-filter-row {
+  margin-bottom: 10px;
+}
+.sku-cat-filter {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  padding: 8px 10px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20' fill='%23888'%3E%3Cpath fill-rule='evenodd' d='M10 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 011.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 011.414-1.414L9 13.586V4a1 1 0 011-1z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+.sku-cat-filter:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
+
+/* ── Condensed view ── */
+#sku-list.condensed .sku-card { padding: 7px 12px; }
+#sku-list.condensed .sku-two-col { display: none; }
+#sku-list.condensed .sku-barcode-area { display: none; }
+#sku-list.condensed .sku-sku-row { margin-top: 2px; }
