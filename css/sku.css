@@ -359,6 +359,12 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
   margin-top: 0;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+}
+.sku-sku-row .sku-barcode-area svg {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 /* ── Category filter ── */
@@ -386,7 +392,27 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 .sku-cat-filter:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
 
 /* ── Condensed view ── */
-#sku-list.condensed .sku-card { padding: 7px 12px; }
-#sku-list.condensed .sku-two-col { display: none; }
+#sku-list.condensed .sku-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+#sku-list.condensed .sku-two-col,
+#sku-list.condensed .sku-field-label,
 #sku-list.condensed .sku-barcode-area { display: none; }
-#sku-list.condensed .sku-sku-row { margin-top: 2px; }
+#sku-list.condensed .sku-card-top {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+#sku-list.condensed .sku-name-cell {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#sku-list.condensed .sku-sku-row {
+  flex-shrink: 0;
+  margin-top: 0;
+}
