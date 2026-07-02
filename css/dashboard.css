@@ -747,23 +747,22 @@ body { overflow-x: hidden; }
 #auth-submit { background: var(--color-primary); color: #fff; }
 #auth-submit:hover:not(:disabled) { opacity: .88; }
 #auth-submit:disabled { opacity: .5; cursor: default; }
-#auth-cancel, #auth-toggle, #auth-close { background: rgba(0,0,0,.08); color: var(--color-text); }
-#auth-cancel:hover, #auth-toggle:hover, #auth-close:hover { background: rgba(0,0,0,.14); }
+#auth-cancel, #auth-toggle, #auth-close { background: var(--color-bg); color: var(--color-text); }
+#auth-cancel:hover, #auth-toggle:hover, #auth-close:hover { background: var(--color-border-strong); }
 #auth-signout { background: var(--color-primary); color: #fff; }
 #auth-signout:hover { opacity: .88; }
 [data-theme="dark"] #auth-cancel,
 [data-theme="dark"] #auth-toggle,
-[data-theme="dark"] #auth-close { background: rgba(255,255,255,.1); }
+[data-theme="dark"] #auth-close { background: var(--color-bg); }
 .auth-sync-info {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 5px;
-  background: rgba(0,0,0,.04);
+  background: var(--color-bg);
   border-radius: var(--radius-md);
   padding: 10px 12px;
 }
-[data-theme="dark"] .auth-sync-info { background: rgba(255,255,255,.06); }
 .auth-sync-row {
   display: flex;
   align-items: baseline;
@@ -778,6 +777,5 @@ body { overflow-x: hidden; }
   color: var(--color-text);
   font-weight: 500;
 }
-#auth-sync-now { background: rgba(0,0,0,.08); color: var(--color-text); }
-#auth-sync-now:hover { background: rgba(0,0,0,.14); }
-[data-theme="dark"] #auth-sync-now { background: rgba(255,255,255,.1); }
+#auth-sync-now { background: var(--color-bg); color: var(--color-text); }
+#auth-sync-now:hover { background: var(--color-border-strong); }

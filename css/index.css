@@ -266,17 +266,13 @@ body {
   font-size: 14px;
   font-family: inherit;
   color: var(--color-text);
-  background: rgba(255,255,255,.7);
+  background: var(--color-surface);
   outline: none;
   transition: border-color .15s, box-shadow .15s;
 }
 .search-input:focus {
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
-  background: var(--color-surface);
-}
-[data-theme="dark"] .search-input {
-  background: rgba(255,255,255,.08);
 }
 /* Hide the browser's built-in clear button — we handle Escape */
 .search-input::-webkit-search-cancel-button { display: none; }
