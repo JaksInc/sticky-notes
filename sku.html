@@ -17,6 +17,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Quarterboard">
   <meta name="theme-color" content="#f96302">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
@@ -26,6 +29,7 @@
   <h1>SKU Lookup</h1>
   <button class="sku-toolbar-btn" id="sku-import-btn" title="Import CSV"></button>
   <button class="sku-toolbar-btn" id="sku-export-btn" title="Export CSV"></button>
+  <button class="sku-toolbar-btn" id="btn-cloud" title="Sign in to sync"></button>
   <button class="sku-theme-btn" id="btn-theme" title="Toggle theme"></button>
 </nav>
 
@@ -334,5 +338,7 @@
 
 })();
 </script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cloud.js"></script>
 </body>
 </html>

@@ -29,7 +29,7 @@
   // ── localStorage intercept (layout + view only — no explicit hook points) ─
 
   var origSet = localStorage.setItem.bind(localStorage);
-  var INTERCEPT_KEYS = ['qb-layout', 'sticky-notes-view'];
+  var INTERCEPT_KEYS = ['qb-layout', 'sticky-notes-view', 'sticky-skus'];
   localStorage.setItem = function (key, value) {
     origSet(key, value);
     if (INTERCEPT_KEYS.includes(key) && auth.currentUser) pushKey(key, value);
@@ -272,26 +272,28 @@
 
   var isSignUp = false;
 
-  document.getElementById('btn-cloud').addEventListener('click', function () {
-    document.getElementById('auth-modal').style.display = 'flex';
-    if (auth.currentUser) {
-      populateSyncInfo();
-    } else {
-      document.getElementById('auth-username').focus();
-    }
-    clearAuthError();
-  });
-
-  document.getElementById('auth-sync-now').addEventListener('click', function () {
-    if (!auth.currentUser) return;
-    SYNC_KEYS.forEach(function (k) {
-      var raw = localStorage.getItem(k);
-      if (raw != null) pushKey(k, raw);
+  var _cloudBtn = document.getElementById('btn-cloud');
+  if (_cloudBtn) {
+    _cloudBtn.addEventListener('click', function () {
+      var modal = document.getElementById('auth-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        if (auth.currentUser) {
+          populateSyncInfo();
+        } else {
+          document.getElementById('auth-username').focus();
+        }
+        clearAuthError();
+      } else if (!auth.currentUser) {
+        location.href = 'index.html';
+      }
     });
-  });
+  }
 
   function closeAuthModal() {
-    document.getElementById('auth-modal').style.display = 'none';
+    var modal = document.getElementById('auth-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
     document.getElementById('auth-password').value = '';
     document.getElementById('auth-regcode').value  = '';
     clearAuthError();
@@ -304,74 +306,84 @@
     }
   }
 
-  document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
-  document.getElementById('auth-close').addEventListener('click', closeAuthModal);
-  document.getElementById('auth-modal').addEventListener('click', function (e) {
-    if (e.target.id === 'auth-modal') closeAuthModal();
-  });
+  if (document.getElementById('auth-modal')) {
+    document.getElementById('auth-sync-now').addEventListener('click', function () {
+      if (!auth.currentUser) return;
+      SYNC_KEYS.forEach(function (k) {
+        var raw = localStorage.getItem(k);
+        if (raw != null) pushKey(k, raw);
+      });
+    });
 
-  document.getElementById('auth-toggle').addEventListener('click', function () {
-    isSignUp = !isSignUp;
-    document.getElementById('auth-title').textContent  = isSignUp ? 'Create Account' : 'Sign In';
-    document.getElementById('auth-submit').textContent = isSignUp ? 'Create Account' : 'Sign In';
-    document.getElementById('auth-toggle').textContent = isSignUp ? 'Back to Sign In' : 'Create Account';
-    document.getElementById('auth-regcode').style.display = isSignUp ? '' : 'none';
-    document.getElementById('auth-regcode').value = '';
-    clearAuthError();
-  });
+    document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
+    document.getElementById('auth-close').addEventListener('click', closeAuthModal);
+    document.getElementById('auth-modal').addEventListener('click', function (e) {
+      if (e.target.id === 'auth-modal') closeAuthModal();
+    });
 
-  document.getElementById('auth-submit').addEventListener('click', async function () {
-    var username = document.getElementById('auth-username').value.trim();
-    var password = document.getElementById('auth-password').value;
-    var regcode  = document.getElementById('auth-regcode').value;
+    document.getElementById('auth-toggle').addEventListener('click', function () {
+      isSignUp = !isSignUp;
+      document.getElementById('auth-title').textContent  = isSignUp ? 'Create Account' : 'Sign In';
+      document.getElementById('auth-submit').textContent = isSignUp ? 'Create Account' : 'Sign In';
+      document.getElementById('auth-toggle').textContent = isSignUp ? 'Back to Sign In' : 'Create Account';
+      document.getElementById('auth-regcode').style.display = isSignUp ? '' : 'none';
+      document.getElementById('auth-regcode').value = '';
+      clearAuthError();
+    });
 
-    if (!username || !password) return;
-    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
-      showAuthError('Username may only contain letters, numbers, dots, hyphens, and underscores.');
-      return;
-    }
-    if (isSignUp) {
-      var expected = window.FB_CONFIG && window.FB_CONFIG.registrationCode;
-      if (!expected || regcode !== expected) {
-        showAuthError('Incorrect registration code.');
+    document.getElementById('auth-submit').addEventListener('click', async function () {
+      var username = document.getElementById('auth-username').value.trim();
+      var password = document.getElementById('auth-password').value;
+      var regcode  = document.getElementById('auth-regcode').value;
+
+      if (!username || !password) return;
+      if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+        showAuthError('Username may only contain letters, numbers, dots, hyphens, and underscores.');
         return;
       }
-    }
-
-    var btn = document.getElementById('auth-submit');
-    btn.disabled = true;
-    btn.textContent = isSignUp ? 'Creating…' : 'Signing in…';
-    clearAuthError();
-    try {
-      var fakeEmail = toFakeEmail(username);
       if (isSignUp) {
-        await auth.createUserWithEmailAndPassword(fakeEmail, password);
-      } else {
-        await auth.signInWithEmailAndPassword(fakeEmail, password);
+        var expected = window.FB_CONFIG && window.FB_CONFIG.registrationCode;
+        if (!expected || regcode !== expected) {
+          showAuthError('Incorrect registration code.');
+          return;
+        }
       }
-      closeAuthModal();
-    } catch (err) {
-      showAuthError(friendlyAuthError(err.code));
-    } finally {
-      btn.disabled = false;
-      btn.textContent = isSignUp ? 'Create Account' : 'Sign In';
-    }
-  });
 
-  document.getElementById('auth-signout').addEventListener('click', async function () {
-    pendingLogout = true;
-    await auth.signOut();
-    closeAuthModal();
-  });
-
-  ['auth-username', 'auth-password', 'auth-regcode'].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') document.getElementById('auth-submit').click();
-      if (e.key === 'Escape') closeAuthModal();
+      var btn = document.getElementById('auth-submit');
+      btn.disabled = true;
+      btn.textContent = isSignUp ? 'Creating…' : 'Signing in…';
+      clearAuthError();
+      try {
+        var fakeEmail = toFakeEmail(username);
+        if (isSignUp) {
+          await auth.createUserWithEmailAndPassword(fakeEmail, password);
+        } else {
+          await auth.signInWithEmailAndPassword(fakeEmail, password);
+        }
+        closeAuthModal();
+      } catch (err) {
+        showAuthError(friendlyAuthError(err.code));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = isSignUp ? 'Create Account' : 'Sign In';
+      }
     });
-  });
+
+    document.getElementById('auth-signout').addEventListener('click', async function () {
+      pendingLogout = true;
+      await auth.signOut();
+      closeAuthModal();
+    });
+
+    ['auth-username', 'auth-password', 'auth-regcode'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') document.getElementById('auth-submit').click();
+        if (e.key === 'Escape') closeAuthModal();
+      });
+    });
+  }
 
   function showAuthError(msg) {
     var el = document.getElementById('auth-error');

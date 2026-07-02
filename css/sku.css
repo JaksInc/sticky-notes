@@ -77,6 +77,18 @@ html, body {
 .sku-theme-btn:focus-visible,
 .sku-toolbar-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
+/* Cloud account button label in toolbar */
+.sku-toolbar .cloud-user-email {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 11px;
+}
+.sku-toolbar .cloud-status { font-size: 10px; }
+
 /* ── Page body ── */
 .sku-wrap {
   max-width: 500px;
