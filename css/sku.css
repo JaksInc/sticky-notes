@@ -57,7 +57,8 @@ html, body {
   flex: 1;
 }
 
-.sku-theme-btn {
+.sku-theme-btn,
+.sku-toolbar-btn {
   padding: 4px 8px;
   border: none;
   border-radius: var(--radius-md);
@@ -71,8 +72,10 @@ html, body {
   flex-shrink: 0;
   font-family: 'IBM Plex Mono', monospace;
 }
-.sku-theme-btn:hover { background: rgba(255,255,255,.38); }
-.sku-theme-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.sku-theme-btn:hover,
+.sku-toolbar-btn:hover { background: rgba(255,255,255,.38); }
+.sku-theme-btn:focus-visible,
+.sku-toolbar-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 /* ── Page body ── */
 .sku-wrap {
@@ -134,12 +137,24 @@ html, body {
 }
 .sku-search-slot input::placeholder { color: var(--color-text-muted); }
 
-/* ── Buttons ── */
-.sku-btn-row {
+/* ── Search + Add row ── */
+.sku-search-row {
   display: flex;
   gap: 8px;
+  align-items: center;
   margin-bottom: 16px;
 }
+.sku-search-row .sku-search-slot {
+  flex: 1;
+  margin-bottom: 0;
+}
+.sku-search-row .sku-btn {
+  flex: none;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+/* ── Buttons ── */
 
 button.sku-btn {
   font-family: 'Oswald', sans-serif;
@@ -268,6 +283,8 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
   overflow-x: auto;
 }
 .sku-barcode-area .barcode-inline { margin: 0; }
+.sku-barcode-area .barcode-inline-num { display: none; }
+.sku-barcode-area svg { height: 42px; width: auto; }
 .sku-barcode-area:empty { display: none; }
 
 /* Delete button */

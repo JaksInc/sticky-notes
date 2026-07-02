@@ -24,24 +24,22 @@
 <nav class="sku-toolbar">
   <a class="sku-back-btn" id="btn-back" href="index.html"></a>
   <h1>SKU Lookup</h1>
+  <button class="sku-toolbar-btn" id="sku-import-btn" title="Import CSV"></button>
+  <button class="sku-toolbar-btn" id="sku-export-btn" title="Export CSV"></button>
   <button class="sku-theme-btn" id="btn-theme" title="Toggle theme"></button>
 </nav>
 
 <div class="sku-wrap">
   <div class="sku-stat"><b id="sku-count">0</b> items</div>
 
-  <label class="sku-search-slot">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-    <input type="text" id="sku-search" placeholder="Search by name, category, SKU..." autocomplete="off">
-  </label>
-
-  <button class="sku-btn primary" id="sku-add-btn"></button>
-
-  <div class="sku-btn-row">
-    <button class="sku-btn" id="sku-import-btn"></button>
-    <button class="sku-btn" id="sku-export-btn"></button>
+  <div class="sku-search-row">
+    <label class="sku-search-slot">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="sku-search" placeholder="Search by name, category, SKU..." autocomplete="off">
+    </label>
+    <button class="sku-btn primary" id="sku-add-btn"></button>
   </div>
   <input type="file" id="sku-file-input" accept=".csv">
 
@@ -77,8 +75,8 @@
 
   document.getElementById('btn-back').innerHTML       = icon('back', 13) + ' Dashboard';
   document.getElementById('sku-add-btn').innerHTML    = icon('plus', 14) + ' Add Item';
-  document.getElementById('sku-import-btn').innerHTML = icon('upload', 13) + ' Import';
-  document.getElementById('sku-export-btn').innerHTML = icon('download', 13) + ' Export';
+  document.getElementById('sku-import-btn').innerHTML = icon('upload', 14);
+  document.getElementById('sku-export-btn').innerHTML = icon('download', 14);
 
   // ── SKU formatting ────────────────────────────────────────────────────────
 
