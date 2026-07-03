@@ -83,7 +83,7 @@
 
   // ── Toolbar labels ────────────────────────────────────────────────────────
 
-  document.getElementById('btn-back').innerHTML       = icon('back', 13) + ' Dashboard';
+  document.getElementById('btn-back').innerHTML       = icon('back', 13) + '<span class="sku-btn-label"> Dashboard</span>';
   document.getElementById('sku-add-btn').innerHTML    = icon('plus', 14) + ' Add Item';
   document.getElementById('sku-import-btn').innerHTML = icon('upload', 14);
   document.getElementById('sku-export-btn').innerHTML = icon('download', 14);
@@ -172,6 +172,14 @@
       skuRow.appendChild(skuValueField);
       skuRow.appendChild(barcodeArea);
       card.appendChild(skuRow);
+
+      card.addEventListener('click', e => {
+        if (!condensed) return;
+        if (e.target.closest('.sku-del-btn')) return;
+        if (card.classList.contains('expanded')) return;
+        listEl.querySelectorAll('.sku-card.expanded').forEach(c => c.classList.remove('expanded'));
+        card.classList.add('expanded');
+      });
 
       listEl.appendChild(card);
     });
@@ -391,6 +399,13 @@
     condensed = !condensed;
     localStorage.setItem('sku-view', condensed ? 'condensed' : 'expanded');
     applyCondensed();
+  });
+
+  document.addEventListener('click', e => {
+    if (!condensed) return;
+    if (!e.target.closest('#sku-list .sku-card')) {
+      listEl.querySelectorAll('.sku-card.expanded').forEach(c => c.classList.remove('expanded'));
+    }
   });
 
   // ── Init ──────────────────────────────────────────────────────────────────
