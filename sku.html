@@ -236,7 +236,7 @@
     if (row.packSize) {
       const lbl = document.createElement('span');
       lbl.className = 'sku-pack-label';
-      lbl.textContent = 'Qty';
+      lbl.textContent = 'Pack size';
       container.appendChild(lbl);
       const cell = makeCell(row.packSize, 'sku-pack-cell', 'e.g. 12');
       cell.addEventListener('blur', () => {
@@ -256,7 +256,7 @@
         container.innerHTML = '';
         const lbl = document.createElement('span');
         lbl.className = 'sku-pack-label';
-        lbl.textContent = 'Qty';
+        lbl.textContent = 'Pack size';
         container.appendChild(lbl);
         const cell = makeCell('', 'sku-pack-cell', 'e.g. 12');
         cell.addEventListener('blur', () => {
