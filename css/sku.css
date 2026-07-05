@@ -430,7 +430,11 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
   font-size: 11px;
   cursor: pointer;
   letter-spacing: 0.02em;
+  opacity: 0;
+  transition: opacity .15s;
 }
+.sku-card:hover .sku-pack-add,
+.sku-card:focus-within .sku-pack-add { opacity: 1; }
 .sku-pack-add:hover { color: var(--color-primary); }
 
 /* ── Condensed view ── */
