@@ -173,6 +173,12 @@
       skuRow.appendChild(barcodeArea);
       card.appendChild(skuRow);
 
+      // Pack size (optional)
+      const packWrap = document.createElement('div');
+      packWrap.className = 'sku-pack-wrap';
+      buildPackField(row, packWrap);
+      card.appendChild(packWrap);
+
       card.addEventListener('click', e => {
         if (!condensed) return;
         if (e.target.closest('.sku-del-btn')) return;
@@ -223,6 +229,48 @@
     const barcode = digits.length >= 6 ? detectBarcode(digits) : null;
     if (!barcode || !barcode.valid) return;
     container.appendChild(buildBarcodeElement(barcode, null));
+  }
+
+  function buildPackField(row, container) {
+    container.innerHTML = '';
+    if (row.packSize) {
+      const lbl = document.createElement('span');
+      lbl.className = 'sku-pack-label';
+      lbl.textContent = 'Qty';
+      container.appendChild(lbl);
+      const cell = makeCell(row.packSize, 'sku-pack-cell', 'e.g. 12');
+      cell.addEventListener('blur', () => {
+        const val = cell.textContent.trim();
+        row.packSize = val;
+        save();
+        if (!val) buildPackField(row, container);
+      });
+      cell.addEventListener('keydown', blurOnEnter);
+      container.appendChild(cell);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'sku-pack-add';
+      btn.type = 'button';
+      btn.textContent = '+ Pack size';
+      btn.addEventListener('click', () => {
+        container.innerHTML = '';
+        const lbl = document.createElement('span');
+        lbl.className = 'sku-pack-label';
+        lbl.textContent = 'Qty';
+        container.appendChild(lbl);
+        const cell = makeCell('', 'sku-pack-cell', 'e.g. 12');
+        cell.addEventListener('blur', () => {
+          const val = cell.textContent.trim();
+          row.packSize = val;
+          save();
+          buildPackField(row, container);
+        });
+        cell.addEventListener('keydown', blurOnEnter);
+        container.appendChild(cell);
+        cell.focus();
+      });
+      container.appendChild(btn);
+    }
   }
 
   // ── Field handlers ────────────────────────────────────────────────────────
@@ -294,7 +342,7 @@
   // ── Add item ──────────────────────────────────────────────────────────────
 
   document.getElementById('sku-add-btn').addEventListener('click', () => {
-    const newRow = { id: crypto.randomUUID(), name: '', category: '', dimensions: '', sku: '' };
+    const newRow = { id: crypto.randomUUID(), name: '', category: '', dimensions: '', sku: '', packSize: '' };
     data.unshift(newRow);
     save();
     searchEl.value = '';
@@ -313,7 +361,7 @@
   }
 
   document.getElementById('sku-export-btn').addEventListener('click', () => {
-    const cols = ['name', 'category', 'dimensions', 'sku'];
+    const cols = ['name', 'category', 'dimensions', 'sku', 'packSize'];
     const lines = [cols.join(',')].concat(data.map(row => cols.map(f => csvEscape(row[f])).join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -359,10 +407,10 @@
       const hdr = rows[0].map(h => h.trim().toLowerCase());
       const hasHeader = hdr.includes('name') && hdr.includes('sku');
       let start = 0;
-      let colMap = { name: 0, category: 1, dimensions: 2, sku: 3 };
+      let colMap = { name: 0, category: 1, dimensions: 2, sku: 3, packSize: -1 };
       if (hasHeader) {
         start = 1;
-        colMap = { name: hdr.indexOf('name'), category: hdr.indexOf('category'), dimensions: hdr.indexOf('dimensions'), sku: hdr.indexOf('sku') };
+        colMap = { name: hdr.indexOf('name'), category: hdr.indexOf('category'), dimensions: hdr.indexOf('dimensions'), sku: hdr.indexOf('sku'), packSize: hdr.indexOf('packsize') };
       }
       data = [];
       for (let i = start; i < rows.length; i++) {
@@ -373,7 +421,8 @@
           name:       colMap.name       >= 0 ? (r[colMap.name]       || '').trim() : '',
           category:   colMap.category   >= 0 ? (r[colMap.category]   || '').trim() : '',
           dimensions: colMap.dimensions >= 0 ? (r[colMap.dimensions] || '').trim() : '',
-          sku: formatSku(skuRaw).value
+          sku:        formatSku(skuRaw).value,
+          packSize:   colMap.packSize   >= 0 ? (r[colMap.packSize]   || '').trim() : ''
         });
       }
       save();
