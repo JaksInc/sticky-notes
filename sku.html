@@ -179,6 +179,12 @@
       buildPackField(row, packWrap);
       card.appendChild(packWrap);
 
+      // OCB flag (optional)
+      const ocbWrap = document.createElement('div');
+      ocbWrap.className = 'sku-ocb-wrap';
+      buildOcbField(row, ocbWrap);
+      card.appendChild(ocbWrap);
+
       card.addEventListener('click', e => {
         if (!condensed) return;
         if (e.target.closest('.sku-del-btn')) return;
@@ -273,6 +279,26 @@
     }
   }
 
+  function buildOcbField(row, container) {
+    const label = document.createElement('label');
+    label.className = 'sku-ocb-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'sku-ocb-cb';
+    cb.checked = !!row.ocb;
+    cb.addEventListener('change', () => {
+      row.ocb = cb.checked;
+      save();
+      container.classList.toggle('sku-ocb-on', row.ocb);
+    });
+    const span = document.createElement('span');
+    span.textContent = 'OCB';
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+    container.classList.toggle('sku-ocb-on', !!row.ocb);
+  }
+
   // ── Field handlers ────────────────────────────────────────────────────────
 
   function blurOnEnter(e) {
@@ -342,7 +368,7 @@
   // ── Add item ──────────────────────────────────────────────────────────────
 
   document.getElementById('sku-add-btn').addEventListener('click', () => {
-    const newRow = { id: crypto.randomUUID(), name: '', category: '', dimensions: '', sku: '', packSize: '' };
+    const newRow = { id: crypto.randomUUID(), name: '', category: '', dimensions: '', sku: '', packSize: '', ocb: false };
     data.unshift(newRow);
     save();
     searchEl.value = '';
@@ -361,7 +387,7 @@
   }
 
   document.getElementById('sku-export-btn').addEventListener('click', () => {
-    const cols = ['name', 'category', 'dimensions', 'sku', 'packSize'];
+    const cols = ['name', 'category', 'dimensions', 'sku', 'packSize', 'ocb'];
     const lines = [cols.join(',')].concat(data.map(row => cols.map(f => csvEscape(row[f])).join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -410,7 +436,7 @@
       let colMap = { name: 0, category: 1, dimensions: 2, sku: 3, packSize: -1 };
       if (hasHeader) {
         start = 1;
-        colMap = { name: hdr.indexOf('name'), category: hdr.indexOf('category'), dimensions: hdr.indexOf('dimensions'), sku: hdr.indexOf('sku'), packSize: hdr.indexOf('packsize') };
+        colMap = { name: hdr.indexOf('name'), category: hdr.indexOf('category'), dimensions: hdr.indexOf('dimensions'), sku: hdr.indexOf('sku'), packSize: hdr.indexOf('packsize'), ocb: hdr.indexOf('ocb') };
       }
       data = [];
       for (let i = start; i < rows.length; i++) {
@@ -422,7 +448,8 @@
           category:   colMap.category   >= 0 ? (r[colMap.category]   || '').trim() : '',
           dimensions: colMap.dimensions >= 0 ? (r[colMap.dimensions] || '').trim() : '',
           sku:        formatSku(skuRaw).value,
-          packSize:   colMap.packSize   >= 0 ? (r[colMap.packSize]   || '').trim() : ''
+          packSize:   colMap.packSize   >= 0 ? (r[colMap.packSize]   || '').trim() : '',
+          ocb:        colMap.ocb        >= 0 ? (r[colMap.ocb]        || '').trim() === 'true' : false
         });
       }
       save();

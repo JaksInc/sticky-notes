@@ -442,6 +442,53 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 .sku-card:focus-within .sku-pack-add { opacity: 1; }
 .sku-pack-add:hover { color: var(--color-primary); }
 
+/* ── OCB flag ── */
+.sku-ocb-wrap { margin-top: 6px; }
+.sku-ocb-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  user-select: none;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.sku-ocb-wrap.sku-ocb-on .sku-ocb-label { opacity: 1; color: var(--color-primary); }
+.sku-card:hover .sku-ocb-label,
+.sku-card:focus-within .sku-ocb-label { opacity: 1; }
+.sku-ocb-cb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 3px;
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.sku-ocb-cb:checked { background: var(--color-primary); border-color: var(--color-primary); }
+.sku-ocb-cb:checked::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: -1px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+.sku-ocb-cb:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-primary-light); }
+
 /* ── Condensed view ── */
 #sku-list.condensed .sku-card {
   display: flex;
@@ -453,7 +500,8 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list.condensed .sku-two-col,
 #sku-list.condensed .sku-field-label,
 #sku-list.condensed .sku-barcode-area,
-#sku-list.condensed .sku-pack-wrap { display: none; }
+#sku-list.condensed .sku-pack-wrap,
+#sku-list.condensed .sku-ocb-wrap { display: none; }
 #sku-list.condensed .sku-card-top {
   flex: 1;
   min-width: 0;
@@ -481,6 +529,7 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list.condensed .sku-card.expanded .sku-field-label { display: block; }
 #sku-list.condensed .sku-card.expanded .sku-barcode-area { display: block; }
 #sku-list.condensed .sku-card.expanded .sku-pack-wrap { display: flex; }
+#sku-list.condensed .sku-card.expanded .sku-ocb-wrap { display: block; }
 #sku-list.condensed .sku-card.expanded .sku-card-top { margin-bottom: 4px; }
 #sku-list.condensed .sku-card.expanded .sku-sku-row { flex-shrink: unset; }
 #sku-list.condensed .sku-card.expanded .sku-name-cell {
