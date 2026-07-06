@@ -347,13 +347,24 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 }
 .sku-footer b { color: var(--color-primary); }
 
+/* ── Inline SKU label ── */
+.sku-sku-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
 /* ── SKU + barcode flex row ── */
 .sku-sku-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: 0;
+  margin-top: 8px;
 }
 .sku-sku-row .sku-value-field { flex-shrink: 0; }
 .sku-sku-row .sku-barcode-area {
@@ -392,13 +403,19 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 }
 .sku-cat-filter:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
 
+/* ── Pack size + OCB row ── */
+.sku-extras-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+}
+
 /* ── Pack size ── */
 .sku-pack-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
-  min-height: 22px;
 }
 .sku-pack-label {
   font-family: 'Oswald', sans-serif;
@@ -443,7 +460,7 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 .sku-pack-add:hover { color: var(--color-primary); }
 
 /* ── OCB flag ── */
-.sku-ocb-wrap { margin-top: 6px; }
+.sku-ocb-wrap { }
 .sku-ocb-label {
   display: inline-flex;
   align-items: center;
@@ -500,8 +517,8 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list.condensed .sku-two-col,
 #sku-list.condensed .sku-field-label,
 #sku-list.condensed .sku-barcode-area,
-#sku-list.condensed .sku-pack-wrap,
-#sku-list.condensed .sku-ocb-wrap { display: none; }
+#sku-list.condensed .sku-sku-label,
+#sku-list.condensed .sku-extras-row { display: none; }
 #sku-list.condensed .sku-card-top {
   flex: 1;
   min-width: 0;
@@ -528,8 +545,8 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list.condensed .sku-card.expanded .sku-two-col { display: flex; }
 #sku-list.condensed .sku-card.expanded .sku-field-label { display: block; }
 #sku-list.condensed .sku-card.expanded .sku-barcode-area { display: block; }
-#sku-list.condensed .sku-card.expanded .sku-pack-wrap { display: flex; }
-#sku-list.condensed .sku-card.expanded .sku-ocb-wrap { display: block; }
+#sku-list.condensed .sku-card.expanded .sku-sku-label { display: inline; }
+#sku-list.condensed .sku-card.expanded .sku-extras-row { display: flex; }
 #sku-list.condensed .sku-card.expanded .sku-card-top { margin-bottom: 4px; }
 #sku-list.condensed .sku-card.expanded .sku-sku-row { flex-shrink: unset; }
 #sku-list.condensed .sku-card.expanded .sku-name-cell {

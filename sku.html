@@ -145,12 +145,6 @@
       twoCol.appendChild(buildLabeledField('dimensions', 'Dimensions', row.dimensions, 'e.g. 2x4x8',  row.id));
       card.appendChild(twoCol);
 
-      // SKU
-      const skuLabel = document.createElement('div');
-      skuLabel.className = 'sku-field-label';
-      skuLabel.textContent = 'SKU';
-      card.appendChild(skuLabel);
-
       card.dataset.category = (row.category || '').trim().toLowerCase();
 
       const skuValueField = document.createElement('div');
@@ -162,28 +156,36 @@
       skuCell.addEventListener('keydown', blurOnEnter);
       skuValueField.appendChild(skuCell);
 
-      // Barcode SVG — flex row with SKU pill
+      // Barcode SVG — flex row with inline SKU label + pill
       const barcodeArea = document.createElement('div');
       barcodeArea.className = 'sku-barcode-area';
       renderBarcodeSvg(row.sku, barcodeArea);
 
       const skuRow = document.createElement('div');
       skuRow.className = 'sku-sku-row';
+      const skuInlineLabel = document.createElement('span');
+      skuInlineLabel.className = 'sku-sku-label';
+      skuInlineLabel.textContent = 'SKU';
+      skuRow.appendChild(skuInlineLabel);
       skuRow.appendChild(skuValueField);
       skuRow.appendChild(barcodeArea);
       card.appendChild(skuRow);
 
-      // Pack size (optional)
+      // Pack size + OCB side by side (optional)
+      const extrasRow = document.createElement('div');
+      extrasRow.className = 'sku-extras-row';
+
       const packWrap = document.createElement('div');
       packWrap.className = 'sku-pack-wrap';
       buildPackField(row, packWrap);
-      card.appendChild(packWrap);
+      extrasRow.appendChild(packWrap);
 
-      // OCB flag (optional)
       const ocbWrap = document.createElement('div');
       ocbWrap.className = 'sku-ocb-wrap';
       buildOcbField(row, ocbWrap);
-      card.appendChild(ocbWrap);
+      extrasRow.appendChild(ocbWrap);
+
+      card.appendChild(extrasRow);
 
       card.addEventListener('click', e => {
         if (!condensed) return;
