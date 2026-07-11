@@ -126,6 +126,22 @@
       nameField.appendChild(nameCell);
       top.appendChild(nameField);
 
+      // Pack size + OCB in top row (right of name, left of delete)
+      const extrasRow = document.createElement('div');
+      extrasRow.className = 'sku-extras-row';
+
+      const packWrap = document.createElement('div');
+      packWrap.className = 'sku-pack-wrap';
+      buildPackField(row, packWrap);
+      extrasRow.appendChild(packWrap);
+
+      const ocbWrap = document.createElement('div');
+      ocbWrap.className = 'sku-ocb-wrap';
+      buildOcbField(row, ocbWrap);
+      extrasRow.appendChild(ocbWrap);
+
+      top.appendChild(extrasRow);
+
       const delBtn = document.createElement('button');
       delBtn.className = 'sku-del-btn';
       delBtn.title = 'Delete item';
@@ -170,22 +186,6 @@
       skuRow.appendChild(skuValueField);
       skuRow.appendChild(barcodeArea);
       card.appendChild(skuRow);
-
-      // Pack size + OCB side by side (optional)
-      const extrasRow = document.createElement('div');
-      extrasRow.className = 'sku-extras-row';
-
-      const packWrap = document.createElement('div');
-      packWrap.className = 'sku-pack-wrap';
-      buildPackField(row, packWrap);
-      extrasRow.appendChild(packWrap);
-
-      const ocbWrap = document.createElement('div');
-      ocbWrap.className = 'sku-ocb-wrap';
-      buildOcbField(row, ocbWrap);
-      extrasRow.appendChild(ocbWrap);
-
-      card.appendChild(extrasRow);
 
       card.addEventListener('click', e => {
         if (!condensed) return;
