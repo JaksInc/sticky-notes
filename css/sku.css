@@ -224,7 +224,7 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 .sku-card-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   margin-bottom: 4px;
 }
@@ -403,12 +403,12 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 }
 .sku-cat-filter:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
 
-/* ── Pack size + OCB row ── */
+/* ── Pack size + OCB (in top row) ── */
 .sku-extras-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 6px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 /* ── Pack size ── */
@@ -417,14 +417,7 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
   align-items: center;
   gap: 6px;
 }
-.sku-pack-label {
-  font-family: 'Oswald', sans-serif;
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  flex-shrink: 0;
-}
+.sku-pack-label { display: none; }
 .sku-pack-cell {
   display: inline-block;
   padding: 2px 4px;
@@ -506,6 +499,12 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 }
 .sku-ocb-cb:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-primary-light); }
 
+/* Checked at rest: show "OCB" text only, hide the checkbox */
+.sku-ocb-wrap.sku-ocb-on .sku-ocb-cb { display: none; }
+/* Reveal the checkbox on hover/focus so it can be unchecked */
+.sku-card:hover .sku-ocb-wrap.sku-ocb-on .sku-ocb-cb,
+.sku-card:focus-within .sku-ocb-wrap.sku-ocb-on .sku-ocb-cb { display: inline-block; }
+
 /* ── Condensed view ── */
 #sku-list.condensed .sku-card {
   display: flex;
@@ -517,8 +516,7 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list.condensed .sku-two-col,
 #sku-list.condensed .sku-field-label,
 #sku-list.condensed .sku-barcode-area,
-#sku-list.condensed .sku-sku-label,
-#sku-list.condensed .sku-extras-row { display: none; }
+#sku-list.condensed .sku-sku-label { display: none; }
 #sku-list.condensed .sku-card-top {
   flex: 1;
   min-width: 0;
@@ -546,7 +544,6 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list.condensed .sku-card.expanded .sku-field-label { display: block; }
 #sku-list.condensed .sku-card.expanded .sku-barcode-area { display: block; }
 #sku-list.condensed .sku-card.expanded .sku-sku-label { display: inline; }
-#sku-list.condensed .sku-card.expanded .sku-extras-row { display: flex; }
 #sku-list.condensed .sku-card.expanded .sku-card-top { margin-bottom: 4px; }
 #sku-list.condensed .sku-card.expanded .sku-sku-row { flex-shrink: unset; }
 #sku-list.condensed .sku-card.expanded .sku-name-cell {
