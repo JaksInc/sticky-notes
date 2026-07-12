@@ -13,7 +13,10 @@
   }
   var auth = firebase.auth();
   var db   = firebase.firestore();
-  var SESSION = crypto.randomUUID();
+  // Persist across reloads (per tab) so our own writes stay recognized as
+  // self-writes — a fresh id each load makes the initial snapshot look foreign.
+  var SESSION = sessionStorage.getItem('_qb_session');
+  if (!SESSION) { SESSION = crypto.randomUUID(); sessionStorage.setItem('_qb_session', SESSION); }
 
   var SYNC_KEYS = [
     'sticky-notes',
@@ -146,7 +149,11 @@
 
   var unsubscribe;
   function startListener(uid) {
+    // The first delivery is always the current document, which pullOnLogin has
+    // already reconciled. Skip it so it isn't re-applied as a "remote change".
+    var firstSnapshot = true;
     unsubscribe = db.doc('users/' + uid + '/data/sync').onSnapshot(function (snap) {
+      if (firstSnapshot) { firstSnapshot = false; return; }
       if (!snap.exists) return;
       var d = snap.data();
       if (d._session === SESSION) return;

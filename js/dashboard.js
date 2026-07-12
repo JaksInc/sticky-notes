@@ -1008,7 +1008,7 @@
     if (key === 'sticky-todos')  { renderTodos(); }
     if (key === 'sticky-links')  { renderLinks(); }
     if (key === 'sticky-pinned') { memoPickerOpen = false; memoIsEditing = false; renderMemo(); renderNotes(); }
-    if (key === 'qb-layout')     { location.reload(); } // layout changes are infrequent; full reload acceptable
+    if (key === 'qb-layout')     { window.qbReapplyLayout ? window.qbReapplyLayout() : location.reload(); }
   });
 
   if ('serviceWorker' in navigator) {

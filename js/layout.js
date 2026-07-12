@@ -581,6 +581,14 @@
 
   applyLayout(loadLayout());
 
+  // Re-apply the layout in place. Used by same-tab cloud sync, where a write
+  // via localStorage.setItem does not fire a `storage` event in this document.
+  window.qbReapplyLayout = function () {
+    if (editMode) exitEditMode();
+    if (_mobilePanel) hideMobilePanel();
+    applyLayout(loadLayout());
+  };
+
   let _resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(_resizeTimer);
