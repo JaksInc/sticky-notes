@@ -18,8 +18,15 @@ function getAllNotes() {
   }
 }
 
+// Notes visible to the user — tombstoned (soft-deleted) notes are kept in
+// storage so their deletion can propagate to the cloud, but never rendered.
+function getVisibleNotes() {
+  return getAllNotes().filter(n => !n.deleted);
+}
+
 function getNote(id) {
-  return getAllNotes().find(n => n.id === id) || null;
+  const note = getAllNotes().find(n => n.id === id) || null;
+  return note && note.deleted ? null : note;
 }
 
 function createNote() {
@@ -48,7 +55,12 @@ function saveNote(note) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
 
+// Soft-delete: mark a tombstone instead of dropping the note, so the removal
+// syncs to the cloud (a pure union merge can't represent an absent note) and
+// wins over older copies on other devices via the bumped `modified` time.
 function deleteNote(id) {
-  const notes = getAllNotes().filter(n => n.id !== id);
+  const notes = getAllNotes().map(n =>
+    n.id === id ? { ...n, deleted: true, content: '', modified: Date.now() } : n
+  );
   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
