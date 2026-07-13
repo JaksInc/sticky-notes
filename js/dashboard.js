@@ -339,7 +339,7 @@
     const container = document.createElement('div');
     container.className = 'note-picker';
 
-    const allNotes = getAllNotes();
+    const allNotes = getVisibleNotes();
 
     if (allNotes.length === 0) {
       const msg = document.createElement('p');
@@ -535,7 +535,7 @@
 
   function renderNotes() {
     const pinnedId = localStorage.getItem(PINNED_KEY);
-    const notes = getAllNotes().filter(n => n.id !== pinnedId).slice(0, 6);
+    const notes = getVisibleNotes().filter(n => n.id !== pinnedId).slice(0, 6);
     const grid = document.getElementById('notes-grid');
     const empty = document.getElementById('notes-empty');
     grid.innerHTML = '';
@@ -583,6 +583,7 @@
         if (win && !win.closed) win.close();
         openWindows.delete(note.id);
         deleteNote(note.id);
+        window.cloudSync?.('sticky-notes');
         renderNotes();
       });
 

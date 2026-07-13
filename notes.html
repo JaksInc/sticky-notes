@@ -67,7 +67,7 @@
 
     function renderGrid() {
       const query = document.getElementById('search-input').value.trim().toLowerCase();
-      let notes = getAllNotes();
+      let notes = getVisibleNotes();
       if (query) notes = notes.filter(n => n.content.toLowerCase().includes(query));
 
       const grid = document.getElementById('grid');
@@ -194,6 +194,7 @@
       if (existing && !existing.closed) existing.close();
       openWindows.delete(id);
       deleteNote(id);
+      window.cloudSync?.('sticky-notes');
       renderGrid();
     }
 
@@ -204,7 +205,7 @@
     });
 
     document.getElementById('btn-export').addEventListener('click', () => {
-      const json = JSON.stringify(getAllNotes(), null, 2);
+      const json = JSON.stringify(getVisibleNotes(), null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
