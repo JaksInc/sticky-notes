@@ -35,7 +35,27 @@
     return (cloudTimeMs || 0) > (appliedHighWaterMs || 0);
   }
 
-  var api = { mergeById: mergeById, mergeNotes: mergeNotes, shouldApplyCloud: shouldApplyCloud };
+  // Drop tombstones ({ deleted: true }) older than maxAgeMs; live items are
+  // always kept. The grace period is essential: a deletion must stay long
+  // enough to win the merge on every device that syncs within the window.
+  // Only once a tombstone is old enough that all devices have surely seen it is
+  // it safe to remove. Compared on the same clock as `modified` (client
+  // Date.now()); a device offline longer than the window can resurrect an item,
+  // the accepted trade-off of time-based tombstone GC.
+  function pruneTombstones(items, nowMs, maxAgeMs) {
+    var out = [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it && it.deleted && (nowMs - (it.modified || 0)) > maxAgeMs) continue;
+      out.push(it);
+    }
+    return out;
+  }
+
+  var api = {
+    mergeById: mergeById, mergeNotes: mergeNotes,
+    shouldApplyCloud: shouldApplyCloud, pruneTombstones: pruneTombstones,
+  };
   root.SyncMerge = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
