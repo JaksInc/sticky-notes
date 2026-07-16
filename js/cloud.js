@@ -91,6 +91,25 @@
 
   // ── Pull / merge ──────────────────────────────────────────────────────────
 
+  // Keys whose value is an array of { id, modified } items reconciled per-item
+  // (union by id, newest wins, tombstones propagate) instead of wholesale
+  // last-write-wins — so concurrent edits on two devices don't clobber each
+  // other's items.
+  var COLLECTION_KEYS = ['sticky-notes', 'sticky-todos', 'sticky-links'];
+
+  function readLocalArray(key) {
+    try {
+      var arr = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+
+  // Merge one collection key's cloud value into local by id, write the result.
+  function mergeCollection(key, cloudValue) {
+    var cloudArr = Array.isArray(cloudValue) ? cloudValue : [];
+    origSet(key, JSON.stringify(SyncMerge.mergeById(readLocalArray(key), cloudArr)));
+  }
+
   function applyCloudData(d) {
     for (var k of SYNC_KEYS) {
       if (d[k] != null) {
@@ -120,19 +139,13 @@
 
     if (!SyncMerge.shouldApplyCloud(cloudTime, hwm)) return;
 
-    var localNotes  = [];
-    try { localNotes = JSON.parse(localStorage.getItem('sticky-notes') || '[]'); } catch (_) {}
-
-    if (localNotes.length) {
-      var cloudNotes = Array.isArray(d['sticky-notes']) ? d['sticky-notes'] : [];
-      var merged = SyncMerge.mergeNotes(localNotes, cloudNotes);
-      origSet('sticky-notes', JSON.stringify(merged));
-      var partial = Object.assign({}, d);
-      delete partial['sticky-notes'];
-      applyCloudData(partial);
-    } else {
-      applyCloudData(d);
-    }
+    // Per-item merge for every collection key; wholesale for the rest.
+    var partial = Object.assign({}, d);
+    COLLECTION_KEYS.forEach(function (k) {
+      mergeCollection(k, d[k]);
+      delete partial[k];
+    });
+    applyCloudData(partial);
 
     origSet(CLOUD_HWM_KEY, String(cloudTime));
     origSet(LAST_SYNC_KEY, String(Date.now()));
@@ -162,11 +175,17 @@
       if (justPulled) { justPulled = false; return; }
       var key = d._changedKey;
       if (!key || !SYNC_KEYS.includes(key)) return;
-      var stored = typeof d[key] === 'string' ? d[key] : JSON.stringify(d[key]);
-      if (stored === null || stored === 'null') {
-        localStorage.removeItem(key);
+      if (COLLECTION_KEYS.indexOf(key) !== -1) {
+        // Merge the remote change into local by item so an incoming edit to one
+        // item can't wipe a local unsynced change to another.
+        mergeCollection(key, d[key]);
       } else {
-        origSet(key, stored);
+        var stored = typeof d[key] === 'string' ? d[key] : JSON.stringify(d[key]);
+        if (stored === null || stored === 'null') {
+          localStorage.removeItem(key);
+        } else {
+          origSet(key, stored);
+        }
       }
       origSet(LAST_SYNC_KEY, String(Date.now()));
       window.dispatchEvent(new CustomEvent('cloud-applied', { detail: { key: key } }));

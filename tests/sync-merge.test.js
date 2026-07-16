@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { mergeNotes, shouldApplyCloud } = require('../js/sync-merge.js');
+const { mergeById, mergeNotes, shouldApplyCloud } = require('../js/sync-merge.js');
 
 test('mergeNotes keeps notes unique to each side', () => {
   const local = [{ id: 'a', modified: 1 }];
@@ -41,6 +41,32 @@ test('mergeNotes: missing modified treated as 0, does not clobber a timestamped 
   const local = [{ id: 'a', content: 'has-time', modified: 5 }];
   const cloud = [{ id: 'a', content: 'no-time' }];
   assert.strictEqual(mergeNotes(local, cloud)[0].content, 'has-time');
+});
+
+test('mergeNotes is an alias of mergeById', () => {
+  assert.strictEqual(mergeNotes, mergeById);
+});
+
+test('mergeById merges todos per-item: concurrent edits on two devices both survive', () => {
+  // Device A toggled todo t1 done; device B added todo t2. Neither should be lost.
+  const local = [
+    { id: 't1', text: 'buy milk', done: true, modified: 20 },
+    { id: 't2', text: 'call mom', done: false, modified: 30 },
+  ];
+  const cloud = [
+    { id: 't1', text: 'buy milk', done: false, modified: 10 }, // stale copy
+  ];
+  const merged = mergeById(local, cloud);
+  const byId = Object.fromEntries(merged.map(t => [t.id, t]));
+  assert.strictEqual(merged.length, 2);
+  assert.strictEqual(byId.t1.done, true, 'newer toggle wins');
+  assert.ok(byId.t2, 'the item only on one device is not dropped');
+});
+
+test('mergeById propagates a deleted todo/link tombstone', () => {
+  const local = [{ id: 'l1', name: 'Docs', url: 'https://x', modified: 5 }];
+  const cloud = [{ id: 'l1', deleted: true, modified: 50 }];
+  assert.strictEqual(mergeById(local, cloud)[0].deleted, true);
 });
 
 test('shouldApplyCloud: newer cloud applies, same/older does not', () => {
