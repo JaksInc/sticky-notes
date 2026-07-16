@@ -28,6 +28,10 @@
     'sticky-skus',
   ];
   var LAST_SYNC_KEY = '_cloud_last_sync';
+  // High-water mark = the Firestore server timestamp (ms) of the last cloud doc
+  // we applied. Used for the pull decision so it stays same-clock (never client
+  // Date.now()). See SyncMerge.shouldApplyCloud.
+  var CLOUD_HWM_KEY = '_cloud_hwm';
 
   // ── localStorage intercept (layout + view only — no explicit hook points) ─
 
@@ -95,16 +99,6 @@
     }
   }
 
-  function mergeNotes(local, cloud) {
-    var map = new Map();
-    for (var n of local) map.set(n.id, n);
-    for (var n of cloud) {
-      var existing = map.get(n.id);
-      if (!existing || (n.modified || 0) > (existing.modified || 0)) map.set(n.id, n);
-    }
-    return Array.from(map.values());
-  }
-
   var justPulled = false;
 
   async function pullOnLogin(uid) {
@@ -121,17 +115,17 @@
     }
 
     var d = snap.data();
-    var lastSync  = Number(localStorage.getItem(LAST_SYNC_KEY) || 0);
+    var hwm       = Number(localStorage.getItem(CLOUD_HWM_KEY) || 0);
     var cloudTime = d.updatedAt ? d.updatedAt.toMillis() : 0;
 
-    if (cloudTime <= lastSync) return;
+    if (!SyncMerge.shouldApplyCloud(cloudTime, hwm)) return;
 
     var localNotes  = [];
     try { localNotes = JSON.parse(localStorage.getItem('sticky-notes') || '[]'); } catch (_) {}
 
     if (localNotes.length) {
       var cloudNotes = Array.isArray(d['sticky-notes']) ? d['sticky-notes'] : [];
-      var merged = mergeNotes(localNotes, cloudNotes);
+      var merged = SyncMerge.mergeNotes(localNotes, cloudNotes);
       origSet('sticky-notes', JSON.stringify(merged));
       var partial = Object.assign({}, d);
       delete partial['sticky-notes'];
@@ -140,6 +134,7 @@
       applyCloudData(d);
     }
 
+    origSet(CLOUD_HWM_KEY, String(cloudTime));
     origSet(LAST_SYNC_KEY, String(Date.now()));
     justPulled = true;
     location.reload();
@@ -153,9 +148,16 @@
     // already reconciled. Skip it so it isn't re-applied as a "remote change".
     var firstSnapshot = true;
     unsubscribe = db.doc('users/' + uid + '/data/sync').onSnapshot(function (snap) {
+      var d = snap.exists ? snap.data() : null;
+      // Advance the applied high-water mark to the doc's server timestamp on any
+      // server-confirmed delivery (including our own writes) so a later login
+      // sees the same clock and doesn't re-pull already-seen state. Runs even
+      // for the skipped first delivery, which reflects current server state.
+      if (d && d.updatedAt && !snap.metadata.hasPendingWrites) {
+        origSet(CLOUD_HWM_KEY, String(d.updatedAt.toMillis()));
+      }
       if (firstSnapshot) { firstSnapshot = false; return; }
       if (!snap.exists) return;
-      var d = snap.data();
       if (d._session === SESSION) return;
       if (justPulled) { justPulled = false; return; }
       var key = d._changedKey;
@@ -187,6 +189,7 @@
         pendingLogout = false;
         SYNC_KEYS.forEach(function (k) { localStorage.removeItem(k); });
         origSet(LAST_SYNC_KEY, '0');
+        origSet(CLOUD_HWM_KEY, '0');
         location.reload();
       } else {
         showLoggedOut();

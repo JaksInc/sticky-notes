@@ -64,3 +64,11 @@ function deleteNote(id) {
   );
   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
+
+// Exposed for unit tests under Node; a no-op in the browser (module undefined).
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    STORAGE_KEY, generateId, getAllNotes, getNote, getVisibleNotes,
+    createNote, saveNote, deleteNote,
+  };
+}
