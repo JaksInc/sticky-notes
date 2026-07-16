@@ -91,3 +91,11 @@ function buildBarcodeElement(barcode, label) {
 
   return wrapper;
 }
+
+// Exposed for unit tests under Node; a no-op in the browser (module undefined).
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    extractDigits, validateUPC, validateEAN13,
+    formatHD6, formatHD10, detectBarcode,
+  };
+}

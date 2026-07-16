@@ -1,0 +1,9 @@
+{
+  "name": "quarterboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Quarterboard dashboard PWA — sticky notes, todos, SKU lookup",
+  "scripts": {
+    "test": "node --test"
+  }
+}
