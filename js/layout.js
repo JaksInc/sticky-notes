@@ -59,10 +59,12 @@
 
   // ── Apply layout to DOM ────────────────────────────────────────────────
 
-  function isMobile() { return window.innerWidth <= 600; }
+  // Layout-specific breakpoint for grid column count — intentionally distinct
+  // from the app-wide window.isMobile() (touch/popup) in js/ui.js.
+  function isNarrowLayout() { return window.innerWidth <= 600; }
 
   function applyLayout(layout) {
-    const mobile = isMobile();
+    const mobile = isNarrowLayout();
     const maxCols = mobile ? 1 : window.innerWidth <= 900 ? 2 : GRID_COLS;
     layout.forEach((entry, idx) => {
       const widget = document.querySelector('[data-widget-id="' + entry.id + '"]');
@@ -394,8 +396,8 @@
     resetBtn.className = 'btn btn-secondary';
     resetBtn.title = 'Reset to default layout';
     resetBtn.innerHTML = icon('swap', 13) + ' <span class="btn-label">Reset</span>';
-    resetBtn.addEventListener('click', () => {
-      if (!confirm('Reset layout to default?')) return;
+    resetBtn.addEventListener('click', async () => {
+      if (!await confirmDialog('Reset layout to default?', { confirmText: 'Reset' })) return;
       localStorage.removeItem(LAYOUT_KEY);
       _currentLayout = defaultLayout();
       applyLayout(_currentLayout);
@@ -571,7 +573,7 @@
   const editBtn = document.getElementById('btn-edit-layout');
   if (editBtn) {
     editBtn.addEventListener('click', () => {
-      if (isMobile()) {
+      if (isNarrowLayout()) {
         _mobilePanel ? hideMobilePanel() : showMobilePanel();
       } else {
         editMode ? exitEditMode() : enterEditMode();
@@ -593,7 +595,7 @@
   window.addEventListener('resize', () => {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(() => {
-      if (editMode && isMobile()) exitEditMode();
+      if (editMode && isNarrowLayout()) exitEditMode();
       applyLayout(editMode ? loadLayoutCurrent() : loadLayout());
     }, 150);
   });

@@ -118,7 +118,10 @@
     }
   }
 
-  var justPulled = false;
+  // Tell the widgets a key's local value changed so they re-render in place.
+  function announceApplied(key) {
+    window.dispatchEvent(new CustomEvent('cloud-applied', { detail: { key: key } }));
+  }
 
   async function pullOnLogin(uid) {
     var snap;
@@ -149,8 +152,9 @@
 
     origSet(CLOUD_HWM_KEY, String(cloudTime));
     origSet(LAST_SYNC_KEY, String(Date.now()));
-    justPulled = true;
-    location.reload();
+    // Re-render the affected widgets in place instead of a full page reload —
+    // the same event path the real-time listener uses for remote changes.
+    SYNC_KEYS.forEach(announceApplied);
   }
 
   // ── Real-time listener ────────────────────────────────────────────────────
@@ -172,7 +176,6 @@
       if (firstSnapshot) { firstSnapshot = false; return; }
       if (!snap.exists) return;
       if (d._session === SESSION) return;
-      if (justPulled) { justPulled = false; return; }
       var key = d._changedKey;
       if (!key || !SYNC_KEYS.includes(key)) return;
       if (COLLECTION_KEYS.indexOf(key) !== -1) {
@@ -188,7 +191,7 @@
         }
       }
       origSet(LAST_SYNC_KEY, String(Date.now()));
-      window.dispatchEvent(new CustomEvent('cloud-applied', { detail: { key: key } }));
+      announceApplied(key);
     });
   }
 
@@ -199,7 +202,7 @@
   auth.onAuthStateChanged(function (user) {
     if (user) {
       pullOnLogin(user.uid).then(function () {
-        if (!justPulled) startListener(user.uid);
+        startListener(user.uid);
       });
       showLoggedIn(user.email);
     } else {
