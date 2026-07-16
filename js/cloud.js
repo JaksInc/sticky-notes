@@ -97,6 +97,10 @@
   // other's items.
   var COLLECTION_KEYS = ['sticky-notes', 'sticky-todos', 'sticky-links'];
 
+  // Tombstones older than this are garbage-collected. Long enough that every
+  // device has surely synced the deletion (see SyncMerge.pruneTombstones).
+  var TOMBSTONE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
+
   function readLocalArray(key) {
     try {
       var arr = JSON.parse(localStorage.getItem(key) || '[]');
@@ -104,10 +108,15 @@
     } catch (_) { return []; }
   }
 
-  // Merge one collection key's cloud value into local by id, write the result.
+  // Merge one collection key's cloud value into local by id, prune expired
+  // tombstones, and write the result. Returns { pruned, prunedCount } so the
+  // caller can decide whether to push the shrunk array back to the cloud.
   function mergeCollection(key, cloudValue) {
     var cloudArr = Array.isArray(cloudValue) ? cloudValue : [];
-    origSet(key, JSON.stringify(SyncMerge.mergeById(readLocalArray(key), cloudArr)));
+    var merged = SyncMerge.mergeById(readLocalArray(key), cloudArr);
+    var pruned = SyncMerge.pruneTombstones(merged, Date.now(), TOMBSTONE_MAX_AGE);
+    origSet(key, JSON.stringify(pruned));
+    return { pruned: pruned, prunedCount: merged.length - pruned.length };
   }
 
   function applyCloudData(d) {
@@ -145,7 +154,10 @@
     // Per-item merge for every collection key; wholesale for the rest.
     var partial = Object.assign({}, d);
     COLLECTION_KEYS.forEach(function (k) {
-      mergeCollection(k, d[k]);
+      var res = mergeCollection(k, d[k]);
+      // If we garbage-collected expired tombstones, push the shrunk array so
+      // the cloud document sheds them too instead of growing forever.
+      if (res.prunedCount > 0) pushKey(k, JSON.stringify(res.pruned));
       delete partial[k];
     });
     applyCloudData(partial);

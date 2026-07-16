@@ -1,7 +1,39 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { mergeById, mergeNotes, shouldApplyCloud } = require('../js/sync-merge.js');
+const { mergeById, mergeNotes, shouldApplyCloud, pruneTombstones } = require('../js/sync-merge.js');
+
+const DAY = 24 * 60 * 60 * 1000;
+const MAX_AGE = 30 * DAY;
+const NOW = 1_000_000_000_000;
+
+test('pruneTombstones drops tombstones older than the grace period', () => {
+  const items = [{ id: 'a', deleted: true, modified: NOW - 31 * DAY }];
+  assert.strictEqual(pruneTombstones(items, NOW, MAX_AGE).length, 0);
+});
+
+test('pruneTombstones keeps recent tombstones so deletions still win the merge', () => {
+  const items = [{ id: 'a', deleted: true, modified: NOW - 5 * DAY }];
+  const kept = pruneTombstones(items, NOW, MAX_AGE);
+  assert.strictEqual(kept.length, 1);
+  assert.strictEqual(kept[0].deleted, true);
+});
+
+test('pruneTombstones never drops live items, however old', () => {
+  const items = [{ id: 'a', modified: NOW - 999 * DAY }];
+  assert.strictEqual(pruneTombstones(items, NOW, MAX_AGE).length, 1);
+});
+
+test('pruneTombstones keeps a tombstone exactly at the boundary (strict >)', () => {
+  const items = [{ id: 'a', deleted: true, modified: NOW - MAX_AGE }];
+  assert.strictEqual(pruneTombstones(items, NOW, MAX_AGE).length, 1);
+});
+
+test('pruneTombstones treats a tombstone with no modified as ancient', () => {
+  const items = [{ id: 'a', deleted: true }];
+  assert.strictEqual(pruneTombstones(items, NOW, MAX_AGE).length, 0);
+});
+
 
 test('mergeNotes keeps notes unique to each side', () => {
   const local = [{ id: 'a', modified: 1 }];
