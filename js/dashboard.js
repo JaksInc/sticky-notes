@@ -27,9 +27,6 @@
     return (name || '').trim().split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase() || '?';
   }
 
-  function isMobile() {
-    return window.innerWidth < 768 || 'ontouchstart' in window;
-  }
 
   // ── Calendar ────────────────────────────────────────────────────────────
 
@@ -593,9 +590,9 @@
       delBtn.className = 'card-btn delete';
       delBtn.title = 'Delete note';
       delBtn.innerHTML = icon('trash', 14);
-      delBtn.addEventListener('click', e => {
+      delBtn.addEventListener('click', async e => {
         e.stopPropagation();
-        if (!confirm('Delete this note?')) return;
+        if (!await confirmDialog('Delete this note?', { confirmText: 'Delete', danger: true })) return;
         const win = openWindows.get(note.id);
         if (win && !win.closed) win.close();
         openWindows.delete(note.id);

@@ -42,6 +42,7 @@
   <script src="js/storage.js"></script>
   <script src="js/barcode.js"></script>
   <script src="js/render.js"></script>
+  <script src="js/ui.js"></script>
   <script>
     const openWindows = new Map();
     let currentView = localStorage.getItem('sticky-notes-view') || 'grid';
@@ -61,9 +62,6 @@
       renderGrid();
     }
 
-    function isMobile() {
-      return window.innerWidth < 768 || 'ontouchstart' in window;
-    }
 
     function renderGrid() {
       const query = document.getElementById('search-input').value.trim().toLowerCase();
@@ -188,8 +186,8 @@
       if (w) openWindows.set(id, w);
     }
 
-    function deleteNoteUI(id) {
-      if (!confirm('Delete this note?')) return;
+    async function deleteNoteUI(id) {
+      if (!await confirmDialog('Delete this note?', { confirmText: 'Delete', danger: true })) return;
       const existing = openWindows.get(id);
       if (existing && !existing.closed) existing.close();
       openWindows.delete(id);
@@ -224,16 +222,16 @@
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         let imported;
         try {
           imported = JSON.parse(ev.target.result);
           if (!Array.isArray(imported)) throw new Error();
         } catch {
-          alert('Invalid backup file.');
+          await alertDialog('Invalid backup file.');
           return;
         }
-        if (!confirm(`Import ${imported.length} note${imported.length !== 1 ? 's' : ''}? Notes with matching IDs will be overwritten.`)) return;
+        if (!await confirmDialog(`Import ${imported.length} note${imported.length !== 1 ? 's' : ''}? Notes with matching IDs will be overwritten.`, { confirmText: 'Import' })) return;
         const existing = getAllNotes();
         const map = new Map(existing.map(n => [n.id, n]));
         for (const note of imported) {
