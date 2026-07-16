@@ -425,8 +425,25 @@
     window.cloudSync?.('sticky-todos');
   }
 
+  // Tombstoned todos stay in storage so their deletion syncs, but are hidden.
+  function visibleTodos() { return loadTodos().filter(t => !t.deleted); }
+
+  function toggleTodo(id, done) {
+    const all = loadTodos();
+    const t = all.find(x => x.id === id);
+    if (!t) return;
+    t.done = done;
+    t.modified = Date.now();
+    saveTodos(all);
+  }
+
+  function deleteTodo(id) {
+    saveTodos(loadTodos().map(t =>
+      t.id === id ? { ...t, deleted: true, modified: Date.now() } : t));
+  }
+
   function renderTodos() {
-    const todos = loadTodos();
+    const todos = visibleTodos();
     const totalPages = Math.max(1, Math.ceil(todos.length / TODO_PAGE_SIZE));
     if (todoPage >= totalPages) todoPage = totalPages - 1;
 
@@ -434,8 +451,7 @@
     const list = document.getElementById('todo-list');
     list.innerHTML = '';
 
-    slice.forEach((todo, sliceIdx) => {
-      const idx = todoPage * TODO_PAGE_SIZE + sliceIdx;
+    slice.forEach((todo) => {
       const li = document.createElement('li');
       li.className = 'todo-item' + (todo.done ? ' done' : '');
 
@@ -443,9 +459,7 @@
       cb.type = 'checkbox';
       cb.checked = todo.done;
       cb.addEventListener('change', () => {
-        const all = loadTodos();
-        all[idx].done = cb.checked;
-        saveTodos(all);
+        toggleTodo(todo.id, cb.checked);
         renderTodos();
       });
 
@@ -458,9 +472,7 @@
       del.innerHTML = icon('trash', 14);
       del.title = 'Delete task';
       del.addEventListener('click', () => {
-        const all = loadTodos();
-        all.splice(idx, 1);
-        saveTodos(all);
+        deleteTodo(todo.id);
         renderTodos();
       });
 
@@ -495,11 +507,13 @@
       const text = input.value.trim();
       if (!text) return;
       const todos = loadTodos();
-      todos.push({ id: crypto.randomUUID(), text, done: false, created: Date.now() });
+      const now = Date.now();
+      todos.push({ id: crypto.randomUUID(), text, done: false, created: now, modified: now });
       saveTodos(todos);
       input.value = '';
       // jump to last page so new item is visible
-      todoPage = Math.max(0, Math.ceil(todos.length / TODO_PAGE_SIZE) - 1);
+      const visibleCount = todos.filter(t => !t.deleted).length;
+      todoPage = Math.max(0, Math.ceil(visibleCount / TODO_PAGE_SIZE) - 1);
       renderTodos();
     }
 
@@ -507,7 +521,10 @@
     document.getElementById('todo-add-btn').addEventListener('click', addTodo);
 
     document.getElementById('todo-clear-btn').addEventListener('click', () => {
-      saveTodos(loadTodos().filter(t => !t.done));
+      // Tombstone completed items (bump modified) so the clear syncs.
+      const now = Date.now();
+      saveTodos(loadTodos().map(t =>
+        (t.done && !t.deleted) ? { ...t, deleted: true, modified: now } : t));
       todoPage = 0;
       renderTodos();
     });
@@ -628,6 +645,14 @@
     window.cloudSync?.('sticky-links');
   }
 
+  // Tombstoned links stay in storage so their deletion syncs, but are hidden.
+  function visibleLinks() { return loadLinks().filter(l => !l.deleted); }
+
+  function deleteLink(id) {
+    saveLinks(loadLinks().map(l =>
+      l.id === id ? { ...l, deleted: true, modified: Date.now() } : l));
+  }
+
   function buildLinkColorRow(currentColor, onChange) {
     const row = document.createElement('div');
     row.className = 'link-color-row';
@@ -702,7 +727,7 @@
           const all = loadLinks();
           const i = all.findIndex(l => l.id === link.id);
           if (i !== -1) {
-            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, useInitials: editUseInitials };
+            all[i] = { ...all[i], name, url: finalUrl, color: editFormColor || null, useInitials: editUseInitials, modified: Date.now() };
           }
           saveLinks(all);
           editingLinkId = null;
@@ -819,9 +844,7 @@
       delBtn.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-        const all = loadLinks();
-        all.splice(idx, 1);
-        saveLinks(all);
+        deleteLink(link.id);
         renderLinks();
       });
 
@@ -838,7 +861,7 @@
   }
 
   function renderLinks() {
-    const links = loadLinks();
+    const links = visibleLinks();
     const body = document.getElementById('links-body');
     body.innerHTML = '';
 
@@ -895,7 +918,7 @@
         if (!name || !url) return;
         const finalUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
         const all = loadLinks();
-        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, useInitials: addUseInitials });
+        all.push({ id: crypto.randomUUID(), name, url: finalUrl, color: linkFormColor || null, useInitials: addUseInitials, modified: Date.now() });
         saveLinks(all);
         linksFormOpen = false;
         linkFormColor = null;
