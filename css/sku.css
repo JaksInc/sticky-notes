@@ -207,8 +207,73 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
 #sku-list {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Category groups ── */
+.sku-group.hidden { display: none; }
+
+.sku-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  padding: 4px 2px 7px;
+  margin-bottom: 10px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+.sku-group-header:hover { color: var(--color-primary); }
+.sku-group-header:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+.sku-group-chevron {
+  width: 0;
+  height: 0;
+  flex-shrink: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transform: rotate(90deg); /* points down when the group is open */
+  transition: transform .15s;
+}
+.sku-group.collapsed .sku-group-chevron { transform: rotate(0deg); }
+
+.sku-group-name {
+  flex: 1;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sku-group-count {
+  flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1px 8px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.sku-group-body {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
+.sku-group.collapsed .sku-group-body { display: none; }
+
+/* While searching/filtering, force groups open so matches are visible. */
+#sku-list.sku-filtering .sku-group-body { display: flex; }
+#sku-list.sku-filtering .sku-group-chevron { transform: rotate(90deg); }
 
 .sku-card {
   background: var(--color-surface);

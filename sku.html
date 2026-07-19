@@ -66,6 +66,7 @@
 
 <script src="js/icons.js"></script>
 <script src="js/barcode.js"></script>
+<script src="js/measure-sort.js"></script>
 <script>
 (function () {
   'use strict';
@@ -104,12 +105,80 @@
   const countEl  = document.getElementById('sku-count');
   const searchEl = document.getElementById('sku-search');
 
+  // Category grouping + collapse state (persisted).
+  const UNCAT = 'Uncategorized';
+  const COLLAPSE_KEY = 'sku-collapsed';
+  let collapsedCats = new Set();
+  try { collapsedCats = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]')); } catch (_) {}
+  function saveCollapsed() { localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...collapsedCats])); }
+
+  // Group items by category ("Uncategorized" first, then alphabetical) and sort
+  // each group by measurement — blank dimensions float to the top so freshly
+  // added items stay editable; ties keep newest-first order (stable sort).
+  function groupData() {
+    const map = new Map();
+    data.forEach(row => {
+      const key = (row.category || '').trim() || UNCAT;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+    });
+    const keys = [...map.keys()].sort((a, b) => {
+      if (a === UNCAT) return b === UNCAT ? 0 : -1;
+      if (b === UNCAT) return 1;
+      return a.toLowerCase() < b.toLowerCase() ? -1 : (a.toLowerCase() > b.toLowerCase() ? 1 : 0);
+    });
+    return keys.map(k => ({
+      key: k,
+      items: map.get(k).slice().sort((x, y) => {
+        const d = MeasureSort.compareDimensions(x.dimensions || '', y.dimensions || '');
+        if (d !== 0) return d;
+        const nx = (x.name || '').toLowerCase(), ny = (y.name || '').toLowerCase();
+        return nx < ny ? -1 : (nx > ny ? 1 : 0);
+      }),
+    }));
+  }
+
   function render() {
     listEl.innerHTML = '';
     emptyEl.style.display = data.length ? 'none' : 'block';
     countEl.textContent = data.length;
 
-    data.forEach(row => {
+    groupData().forEach(group => {
+      const section = document.createElement('div');
+      section.className = 'sku-group';
+      section.dataset.cat = group.key;
+      if (collapsedCats.has(group.key)) section.classList.add('collapsed');
+
+      const header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'sku-group-header';
+      header.innerHTML =
+        '<span class="sku-group-chevron" aria-hidden="true"></span>' +
+        '<span class="sku-group-name"></span>' +
+        '<span class="sku-group-count"></span>';
+      header.querySelector('.sku-group-name').textContent = group.key;
+      header.querySelector('.sku-group-count').textContent = group.items.length;
+      header.addEventListener('click', () => {
+        section.classList.toggle('collapsed');
+        if (section.classList.contains('collapsed')) collapsedCats.add(group.key);
+        else collapsedCats.delete(group.key);
+        saveCollapsed();
+      });
+      section.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'sku-group-body';
+      group.items.forEach(row => body.appendChild(buildCard(row)));
+      section.appendChild(body);
+
+      listEl.appendChild(section);
+    });
+
+    updateCategoryFilter();
+    applyFilters();
+  }
+
+  function buildCard(row) {
       const card = document.createElement('div');
       card.className = 'sku-card';
       card.dataset.id = row.id;
@@ -195,11 +264,7 @@
         card.classList.add('expanded');
       });
 
-      listEl.appendChild(card);
-    });
-
-    updateCategoryFilter();
-    applyFilters();
+      return card;
   }
 
   function makeCell(value, extraClass, placeholder) {
@@ -352,16 +417,23 @@
   function applyFilters() {
     const q = searchEl.value.trim().toLowerCase();
     const cat = catFilterEl.value;
-    const cards = listEl.querySelectorAll('.sku-card');
+    const filtering = !!(q || cat);
+    // While filtering, groups are forced open (CSS) so matches inside a
+    // collapsed group still show.
+    listEl.classList.toggle('sku-filtering', filtering);
     let visible = 0;
-    cards.forEach(card => {
-      const textMatch = !q || card.textContent.toLowerCase().includes(q);
-      const catMatch  = !cat || card.dataset.category === cat;
-      const show = textMatch && catMatch;
-      card.classList.toggle('hidden', !show);
-      if (show) visible++;
+    listEl.querySelectorAll('.sku-group').forEach(group => {
+      let groupVisible = 0;
+      group.querySelectorAll('.sku-card').forEach(card => {
+        const textMatch = !q || card.textContent.toLowerCase().includes(q);
+        const catMatch  = !cat || card.dataset.category === cat;
+        const show = textMatch && catMatch;
+        card.classList.toggle('hidden', !show);
+        if (show) { visible++; groupVisible++; }
+      });
+      group.classList.toggle('hidden', groupVisible === 0);
     });
-    countEl.textContent = (q || cat) ? visible + ' / ' + data.length : data.length;
+    countEl.textContent = filtering ? visible + ' / ' + data.length : data.length;
   }
 
   searchEl.addEventListener('input', applyFilters);
@@ -372,12 +444,14 @@
   document.getElementById('sku-add-btn').addEventListener('click', () => {
     const newRow = { id: crypto.randomUUID(), name: '', category: '', dimensions: '', sku: '', packSize: '', ocb: false };
     data.unshift(newRow);
+    collapsedCats.delete(UNCAT); // new blank item lands in Uncategorized — keep it open
+    saveCollapsed();
     save();
     searchEl.value = '';
     render();
     requestAnimationFrame(() => {
       const card = listEl.querySelector('.sku-card[data-id="' + newRow.id + '"]');
-      if (card) card.querySelector('.sku-cell').focus();
+      if (card) { card.scrollIntoView({ block: 'nearest' }); card.querySelector('.sku-cell').focus(); }
     });
   });
 
