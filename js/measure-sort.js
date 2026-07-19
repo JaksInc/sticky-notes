@@ -63,7 +63,27 @@
     return cmpTokens(dimTokens(a), dimTokens(b));
   }
 
-  var api = { compareDimensions: compareDimensions, dimTokens: dimTokens };
+  // Canonicalize a free-text dimension so the same measurement is always stored
+  // (and searched) the same way. The target form uses characters a person would
+  // TYPE — ascii "x" (not ×), single spaces, tidy fractions — so a search like
+  // "2x4" reliably matches however the item was entered ("2 X 4", "2*4", …).
+  //   "2 X 4 X 8" -> "2x4x8"   "1/2in" -> "1/2 in"   "1 / 2 IN" -> "1/2 in"
+  //   "2*4"       -> "2x4"     "8in"   -> "8 in"     "2 1/2 in" -> "2 1/2 in"
+  function normalizeDimensions(str) {
+    var s = String(str == null ? '' : str).toLowerCase().trim();
+    if (!s) return '';
+    s = s.replace(/\s+/g, ' ');                 // collapse runs of whitespace
+    s = s.replace(/\s*\/\s*/g, '/');            // "1 / 2" -> "1/2"
+    s = s.replace(/[×*]/g, 'x');                // ×, * -> x
+    s = s.replace(/(\d)([a-z]+)/g, '$1 $2');    // "8in" -> "8 in" (also splits x, fixed next)
+    s = s.replace(/(\d)\s*x\s*(?=\d)/g, '$1x'); // "2 x 4" -> "2x4" (x between numbers)
+    return s.trim();
+  }
+
+  var api = {
+    compareDimensions: compareDimensions, dimTokens: dimTokens,
+    normalizeDimensions: normalizeDimensions,
+  };
   root.MeasureSort = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -289,7 +289,15 @@
     lbl.textContent = labelText;
     wrap.appendChild(lbl);
     const cell = makeCell(value, '', placeholder);
-    cell.addEventListener('blur', () => onFieldBlur(rowId, fieldName, cell.textContent));
+    cell.addEventListener('blur', () => {
+      // Canonicalize dimensions on entry so the same measurement is always
+      // stored and searched the same way (e.g. "2 X 4" -> "2x4").
+      if (fieldName === 'dimensions') {
+        const norm = MeasureSort.normalizeDimensions(cell.textContent);
+        if (norm !== cell.textContent) cell.textContent = norm;
+      }
+      onFieldBlur(rowId, fieldName, cell.textContent);
+    });
     cell.addEventListener('keydown', blurOnEnter);
     wrap.appendChild(cell);
     return wrap;
@@ -522,7 +530,7 @@
           id: crypto.randomUUID(),
           name:       colMap.name       >= 0 ? (r[colMap.name]       || '').trim() : '',
           category:   colMap.category   >= 0 ? (r[colMap.category]   || '').trim() : '',
-          dimensions: colMap.dimensions >= 0 ? (r[colMap.dimensions] || '').trim() : '',
+          dimensions: MeasureSort.normalizeDimensions(colMap.dimensions >= 0 ? (r[colMap.dimensions] || '') : ''),
           sku:        formatSku(skuRaw).value,
           packSize:   colMap.packSize   >= 0 ? (r[colMap.packSize]   || '').trim() : '',
           ocb:        colMap.ocb        >= 0 ? (r[colMap.ocb]        || '').trim() === 'true' : false

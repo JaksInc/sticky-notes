@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { compareDimensions } = require('../js/measure-sort.js');
+const { compareDimensions, normalizeDimensions } = require('../js/measure-sort.js');
 
 const sign = (n) => (n < 0 ? -1 : n > 0 ? 1 : 0);
 // Sort a list with the comparator and return the resulting order.
@@ -52,4 +52,35 @@ test('non-numeric text falls back to a stable lexical compare', () => {
 test('equal dimensions compare equal', () => {
   assert.strictEqual(compareDimensions('2x4x8', '2x4x8'), 0);
   assert.strictEqual(compareDimensions('1/2 in', '1/2 in'), 0);
+});
+
+test('normalizeDimensions standardizes the x separator to typed "x"', () => {
+  assert.strictEqual(normalizeDimensions('2 X 4 X 8'), '2x4x8');
+  assert.strictEqual(normalizeDimensions('2*4'), '2x4');
+  assert.strictEqual(normalizeDimensions('2×4×8'), '2x4x8');
+  assert.strictEqual(normalizeDimensions('10x20'), '10x20');
+});
+
+test('normalizeDimensions tidies fractions and spaces units', () => {
+  assert.strictEqual(normalizeDimensions('1/2in'), '1/2 in');
+  assert.strictEqual(normalizeDimensions('1 / 2 IN'), '1/2 in');
+  assert.strictEqual(normalizeDimensions('8in'), '8 in');
+  assert.strictEqual(normalizeDimensions('0.5in'), '0.5 in');
+});
+
+test('normalizeDimensions preserves mixed numbers and simple units', () => {
+  assert.strictEqual(normalizeDimensions('2 1/2 in'), '2 1/2 in');
+  assert.strictEqual(normalizeDimensions('1 gal'), '1 gal');
+});
+
+test('normalizeDimensions trims, lowercases, and leaves non-measurements sane', () => {
+  assert.strictEqual(normalizeDimensions('  2x4x8  '), '2x4x8');
+  assert.strictEqual(normalizeDimensions('Large'), 'large');
+  assert.strictEqual(normalizeDimensions(''), '');
+  assert.strictEqual(normalizeDimensions(null), '');
+});
+
+test('normalize then compare: differently-typed equals sort as equal', () => {
+  assert.strictEqual(
+    compareDimensions(normalizeDimensions('2 X 4 X 8'), normalizeDimensions('2x4x8')), 0);
 });
