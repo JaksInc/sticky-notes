@@ -436,11 +436,15 @@ button.sku-btn:focus-visible { outline: 2px solid var(--color-primary); outline-
   margin-top: 0;
   flex: 1;
   min-width: 0;
+  height: 42px;         /* reserve a constant height so cards match even when */
+  display: flex;        /* a wide barcode has to shrink to fit on mobile */
+  align-items: center;
   overflow: hidden;
 }
 .sku-sku-row .sku-barcode-area svg {
-  width: 100%;
-  height: auto;
+  height: 42px;      /* fixed height keeps every card the same height... */
+  width: auto;       /* ...regardless of how many bars the SKU produces */
+  max-width: 100%;   /* shrink instead of overflow on narrow screens */
   display: block;
 }
 
